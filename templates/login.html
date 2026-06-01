@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block page_styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/login.css') }}" />
+{% endblock %}
+
+{% block content %}
+<section class="auth-shell">
+  <div class="auth-layout reveal-up visible">
+    <div class="auth-grid">
+      <div class="auth-visual">
+        <div class="eyebrow-chip auth-kicker">Welcome back</div>
+        <h1>Resume-powered mock interviews, ready when you are.</h1>
+        <p>Sign in to continue refining your interview performance with adaptive prompts, voice practice, and polished feedback reports.</p>
+        <ul class="auth-points">
+          <li><span>1</span> Pick up where you left off</li>
+          <li><span>2</span> Review session reports instantly</li>
+          <li><span>3</span> Keep practicing with adaptive AI questions</li>
+        </ul>
+
+        <div class="glass-card auth-float auth-float-one">
+          <strong>Session insight</strong>
+          <p>Confidence and structure improved on your last run.</p>
+        </div>
+        <div class="glass-card auth-float auth-float-two">
+          <strong>Adaptive routing</strong>
+          <p>Your next interview adjusts to the role you target.</p>
+        </div>
+      </div>
+
+      <div class="auth-form-wrap">
+        <div class="auth-form-card">
+          <div class="eyebrow-chip">Sign in</div>
+          <h2>Access your interview workspace.</h2>
+          <p class="support-copy">Use the same email you registered with to continue your preparation flow.</p>
+
+          {% if error %}
+          <div class="auth-error">{{ error }}</div>
+          {% endif %}
+
+          <form class="auth-form" method="post" novalidate>
+            <div class="auth-field">
+              <label for="email">Email</label>
+              <input class="auth-input" type="email" id="email" name="email" value="{{ email }}" placeholder="you@company.com" autocomplete="email" required />
+            </div>
+            <div class="auth-field">
+              <label for="password">Password</label>
+              <div class="auth-password-row">
+                <input class="auth-input" type="password" id="password" name="password" placeholder="Enter your password" autocomplete="current-password" required />
+                <button class="password-toggle" type="button" data-toggle-password data-target="password">Show</button>
+              </div>
+            </div>
+            <button class="auth-submit" type="submit">Sign in</button>
+          </form>
+
+          <div class="auth-meta">
+            <span>New to InterviewForge?</span>
+            <a href="{{ url_for('register') }}">Create account</a>
+          </div>
+          <p class="auth-hint">Tip: Use a strong password and keep your interview reports in one place for faster iteration.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block page_scripts %}
+<script src="{{ url_for('static', filename='js/auth.js') }}"></script>
+{% endblock %}

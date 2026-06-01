@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block page_styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/upload.css') }}" />
+{% endblock %}
+
+{% block content %}
+<section class="upload-shell">
+  <div class="upload-layout glass-card reveal-up visible">
+    <div class="upload-copy">
+      <div class="eyebrow-chip">Upload system</div>
+      <h1>Drop in a resume or job description and parse it instantly.</h1>
+      <p>Secure uploads with PDF, DOCX, JPG, and PNG support. InterviewForge extracts structured signals to power adaptive interview sessions.</p>
+
+      <div class="upload-highlights">
+        <div class="mini-card glass-card">
+          <strong>Resume parsing</strong>
+          <span>Skills, projects, certifications, education, experience</span>
+        </div>
+        <div class="mini-card glass-card">
+          <strong>JD parsing</strong>
+          <span>Required skills, responsibilities, technologies</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="upload-panel glass-card">
+      <form id="uploadForm" class="upload-form" method="post" enctype="multipart/form-data" novalidate>
+        <div class="upload-mode">
+          <label class="mode-chip active">
+            <input type="radio" name="document_type" value="resume" checked />
+            <span>Resume</span>
+          </label>
+          <label class="mode-chip">
+            <input type="radio" name="document_type" value="jd" />
+            <span>Job description</span>
+          </label>
+        </div>
+
+        <div id="dropZone" class="drop-zone">
+          <input id="fileInput" class="file-input" type="file" name="document" accept=".pdf,.docx,.jpg,.jpeg,.png" />
+          <div class="drop-icon">⇪</div>
+          <h2>Drag and drop your file here</h2>
+          <p>or click to browse your device</p>
+          <button type="button" class="browse-btn">Choose file</button>
+        </div>
+
+        <div id="filePreview" class="file-preview" hidden>
+          <div>
+            <strong id="fileName"></strong>
+            <span id="fileMeta"></span>
+          </div>
+          <button type="button" id="removeFileBtn" class="remove-file-btn">Remove</button>
+        </div>
+
+        <div class="upload-actions">
+          <button type="submit" class="upload-submit">Upload and parse</button>
+          <a class="upload-link" href="{{ url_for('dashboard') }}">Back to dashboard</a>
+        </div>
+
+        <div id="progressWrap" class="progress-wrap" hidden>
+          <div class="progress-bar-shell"><div id="progressBar" class="progress-bar-fill"></div></div>
+          <span id="progressLabel">Preparing upload...</span>
+        </div>
+
+        <div id="messageBox" class="message-box" hidden></div>
+      </form>
+    </div>
+  </div>
+
+  <div id="resultsArea" class="results-area" {% if not parsed_result %}hidden{% endif %}>
+    {% if parsed_result %}
+      {% include "upload_result_partial.html" %}
+    {% endif %}
+  </div>
+</section>
+{% endblock %}
+
+{% block page_scripts %}
+<script>
+  window.__UPLOAD_INITIAL_RESULT__ = {{ parsed_result | tojson if parsed_result else 'null' }};
+</script>
+<script src="{{ url_for('static', filename='js/upload.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+
+{% block page_styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/report.css') }}" />
+{% endblock %}
+
+{% block content %}
+<section class="report-shell">
+  <header class="report-hero glass-card reveal-up visible">
+    <div>
+      <div class="eyebrow-chip">Final feedback report</div>
+      <h1>Interview performance breakdown for {{ report.candidate_name }}.</h1>
+      <p>Analytics-grade feedback with overall scoring, skill signals, narrative clarity, resume honesty, and an exportable PDF version.</p>
+    </div>
+
+    <div class="report-actions">
+      <a class="primary-action" href="{{ pdf_url }}">Download PDF</a>
+      <a class="secondary-action" href="{{ interview_url }}">Back to interview room</a>
+    </div>
+  </header>
+
+  <section class="score-grid">
+    <article class="score-card glass-card reveal-up visible">
+      <div class="score-ring" data-score="{{ report.overall_score }}">
+        <svg viewBox="0 0 120 120" aria-hidden="true">
+          <circle class="track" cx="60" cy="60" r="50"></circle>
+          <circle class="progress" cx="60" cy="60" r="50"></circle>
+        </svg>
+        <div class="ring-center">
+          <strong>{{ report.overall_score }}</strong>
+          <span>Overall</span>
+        </div>
+      </div>
+      <h3>Overall score</h3>
+      <p>The combined signal across answer quality, consistency, and interview readiness.</p>
+    </article>
+
+    <article class="score-card glass-card reveal-up visible">
+      <div class="score-ring secondary" data-score="{{ report.technical_score }}">
+        <svg viewBox="0 0 120 120" aria-hidden="true">
+          <circle class="track" cx="60" cy="60" r="50"></circle>
+          <circle class="progress" cx="60" cy="60" r="50"></circle>
+        </svg>
+        <div class="ring-center">
+          <strong>{{ report.technical_score }}</strong>
+          <span>Technical</span>
+        </div>
+      </div>
+      <h3>Technical score</h3>
+      <p>How well you reasoned through implementation, tradeoffs, and real-world constraints.</p>
+    </article>
+
+    <article class="score-card glass-card reveal-up visible">
+      <div class="score-ring tertiary" data-score="{{ report.communication_score }}">
+        <svg viewBox="0 0 120 120" aria-hidden="true">
+          <circle class="track" cx="60" cy="60" r="50"></circle>
+          <circle class="progress" cx="60" cy="60" r="50"></circle>
+        </svg>
+        <div class="ring-center">
+          <strong>{{ report.communication_score }}</strong>
+          <span>Communication</span>
+        </div>
+      </div>
+      <h3>Communication score</h3>
+      <p>Clarity, structure, and how consistently your answers landed with interview pressure.</p>
+    </article>
+  </section>
+
+  <section class="report-grid">
+    <article class="panel glass-card reveal-up visible">
+      <div class="panel-head">
+        <h3>Strengths</h3>
+        <span>{{ report.strengths | length }} signals</span>
+      </div>
+      <div class="chip-list">
+        {% for item in report.strengths %}
+        <span class="chip positive">{{ item }}</span>
+        {% endfor %}
+      </div>
+    </article>
+
+    <article class="panel glass-card reveal-up visible">
+      <div class="panel-head">
+        <h3>Weaknesses</h3>
+        <span>{{ report.weaknesses | length }} flags</span>
+      </div>
+      <div class="chip-list">
+        {% for item in report.weaknesses %}
+        <span class="chip warning">{{ item }}</span>
+        {% endfor %}
+      </div>
+    </article>
+
+    <article class="panel glass-card reveal-up visible full-span">
+      <div class="panel-head">
+        <h3>Improvement roadmap</h3>
+        <span>Next steps</span>
+      </div>
+      <ol class="roadmap-list">
+        {% for item in report.improvement_roadmap %}
+        <li>{{ item }}</li>
+        {% endfor %}
+      </ol>
+    </article>
+
+    <article class="panel glass-card reveal-up visible">
+      <div class="panel-head">
+        <h3>Resume honesty check</h3>
+        <span>Consistency</span>
+      </div>
+      <p class="panel-copy">{{ report.resume_honesty_check }}</p>
+    </article>
+
+    <article class="panel glass-card reveal-up visible">
+      <div class="panel-head">
+        <h3>Transcript summary</h3>
+        <span>{{ report.question_count }} turns</span>
+      </div>
+      <p class="panel-copy">{{ report.transcript_summary }}</p>
+    </article>
+
+    <article class="panel glass-card reveal-up visible full-span">
+      <div class="panel-head">
+        <h3>Session highlights</h3>
+        <span>Top moments</span>
+      </div>
+      <div class="timeline">
+        {% for item in report.session_highlights %}
+        <div class="timeline-item">
+          <span class="dot"></span>
+          <p>{{ item }}</p>
+        </div>
+        {% endfor %}
+      </div>
+    </article>
+  </section>
+
+  <section class="footer-cta glass-card reveal-up visible">
+    <div>
+      <div class="eyebrow-chip">Report metadata</div>
+      <p>Average answer length: {{ report.average_answer_length }} words. Average evaluation score: {{ report.average_evaluation_score }}/10.</p>
+    </div>
+    <a class="primary-action" href="{{ pdf_url }}">Download report</a>
+  </section>
+</section>
+{% endblock %}
+
+{% block page_scripts %}
+<script src="{{ url_for('static', filename='js/report.js') }}"></script>
+{% endblock %}

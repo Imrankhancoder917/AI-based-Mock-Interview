@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+
+{% block page_styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}" />
+{% endblock %}
+
+{% block content %}
+<section class="dashboard-shell">
+  <div class="dashboard-layout">
+    <aside class="dashboard-sidebar glass-card">
+      <div class="sidebar-brand">
+        <div class="brand-icon">IF</div>
+        <div>
+          <strong>InterviewForge</strong>
+          <span>Adaptive interview suite</span>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <a class="sidebar-link active" href="{{ url_for('dashboard') }}"><span>⌂</span>Overview</a>
+        <a class="sidebar-link" href="#sessions"><span>◌</span>Sessions</a>
+        <a class="sidebar-link" href="#uploads"><span>⇪</span>Uploads</a>
+        <a class="sidebar-link" href="#analytics"><span>↗</span>Analytics</a>
+        <a class="sidebar-link" href="{{ url_for('logout') }}"><span>⎋</span>Logout</a>
+      </nav>
+
+      <div class="sidebar-card glass-card">
+        <p>Next session</p>
+        <strong>Senior Product Designer</strong>
+        <span>Ready in 12 minutes</span>
+        <a class="dash-btn secondary sidebar-action" href="{{ url_for('interview_room') }}">Start interview</a>
+      </div>
+    </aside>
+
+    <div class="dashboard-main">
+      <header class="dashboard-topbar glass-card">
+        <div>
+          <p class="topbar-kicker">Protected dashboard</p>
+          <h1>Welcome back, {{ user_name.split()[0] }}.</h1>
+          <p>Track your progress, upload materials, and launch the next adaptive interview session.</p>
+        </div>
+
+        <div class="profile-pill">
+          <div class="profile-avatar">{{ user_name[:1] | upper }}</div>
+          <div>
+            <strong>{{ user_name }}</strong>
+            <span>Premium workspace</span>
+          </div>
+        </div>
+      </header>
+
+      <section class="dashboard-banner glass-card reveal-up visible">
+        <div>
+          <div class="eyebrow-chip">Reports</div>
+          <h2>Export your interview feedback as a polished analytics report.</h2>
+          <p>Generate a final report with scores, strengths, weaknesses, roadmap, and a printable PDF.</p>
+        </div>
+        <a class="dash-btn primary" href="{{ url_for('reports.latest_report') }}">View report</a>
+      </section>
+
+      <section class="dashboard-hero glass-card reveal-up visible">
+        <div class="hero-copy">
+          <div class="eyebrow-chip">Overview</div>
+          <h2>Your interview pipeline is active and improving.</h2>
+          <p>Everything is organized for fast iteration: upload, practice, review, and improve with clear signals.</p>
+          <div class="hero-actions">
+            <a class="dash-btn primary" href="#uploads">Upload resume</a>
+            <a class="dash-btn secondary" href="#sessions">Start interview</a>
+          </div>
+        </div>
+        <div class="hero-ring">
+          <div class="ring-core">
+            <strong>84</strong>
+            <span>Interview score</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="stats-grid" aria-label="Dashboard stats">
+        {% for stat in dashboard_stats %}
+        <article class="stat-card glass-card reveal-up visible">
+          <span>{{ stat.label }}</span>
+          <strong>{{ stat.value }}</strong>
+          <p>{{ stat.change }}</p>
+        </article>
+        {% endfor %}
+      </section>
+
+      <section id="uploads" class="action-grid">
+        <article class="action-card glass-card reveal-up visible">
+          <div>
+            <p class="action-kicker">Upload resume</p>
+            <h3>Bring in the latest version of your profile.</h3>
+          </div>
+          <a class="action-btn" href="{{ url_for('upload') }}">Choose file</a>
+        </article>
+        <article class="action-card glass-card reveal-up visible">
+          <div>
+            <p class="action-kicker">Upload JD</p>
+            <h3>Match against the job description you want.</h3>
+          </div>
+          <a class="action-btn" href="{{ url_for('upload') }}">Choose file</a>
+        </article>
+        <article class="action-card glass-card reveal-up visible">
+          <div>
+            <p class="action-kicker">Start interview</p>
+            <h3>Begin a tailored mock interview in one click.</h3>
+          </div>
+          <a class="action-btn highlighted" href="{{ url_for('interview_room') }}">Start session</a>
+        </article>
+      </section>
+
+      <section id="analytics" class="analytics-grid">
+        <article class="chart-card glass-card reveal-up visible">
+          <div class="section-head">
+            <h3>Performance trend</h3>
+            <span>Last 7 sessions</span>
+          </div>
+          <div class="chart-bars" data-chart="trend" aria-label="Performance trend chart"></div>
+        </article>
+        <article class="chart-card glass-card reveal-up visible">
+          <div class="section-head">
+            <h3>Feedback focus</h3>
+            <span>Clarity, structure, confidence</span>
+          </div>
+          <div class="donut-chart" data-chart="focus" aria-label="Feedback focus chart">
+            <div class="donut-center">
+              <strong>72%</strong>
+              <span>Action rate</span>
+            </div>
+          </div>
+        </article>
+      </section>
+
+      <section id="sessions" class="sessions-card glass-card reveal-up visible">
+        <div class="section-head">
+          <div>
+            <h3>Recent interview sessions</h3>
+            <p>Review the latest practice runs and session outcomes.</p>
+          </div>
+          <a class="table-link" href="{{ url_for('dashboard') }}">View full history</a>
+        </div>
+
+        <div class="table-responsive">
+          <table class="sessions-table">
+            <thead>
+              <tr>
+                <th>Role</th>
+                <th>Mode</th>
+                <th>Score</th>
+                <th>Status</th>
+                <th>Time</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for session in recent_sessions %}
+              <tr>
+                <td>{{ session.role }}</td>
+                <td>{{ session.mode }}</td>
+                <td><span class="score-pill">{{ session.score }}</span></td>
+                <td><span class="status-pill {{ 'warn' if session.status == 'Needs review' else 'done' }}">{{ session.status }}</span></td>
+                <td>{{ session.time }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block page_scripts %}
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+{% endblock %}

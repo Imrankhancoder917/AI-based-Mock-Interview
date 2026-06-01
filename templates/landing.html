@@ -1,0 +1,208 @@
+{% extends "base.html" %}
+
+{% block page_styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/landing.css') }}" />
+{% endblock %}
+
+{% block content %}
+<section class="hero-section section-pad">
+  <div class="container-fluid px-0">
+    <div class="hero-grid">
+      <div class="hero-copy reveal-up">
+        <div class="eyebrow-chip">AI Adaptive Mock Interview Platform</div>
+        <h1>Practice interviews that adapt as fast as you do.</h1>
+        <p class="hero-lead">InterviewForge turns your resume into realistic, role-specific mock interviews with intelligent follow-ups, voice practice, and actionable feedback reports that help you improve with every session.</p>
+        <div class="hero-actions">
+          <a class="btn btn-primary btn-lg hero-btn-primary" href="#pricing">Start Free</a>
+          <a class="btn btn-outline-light btn-lg hero-btn-secondary" href="#features">Explore Features</a>
+        </div>
+        <div class="hero-metrics">
+          <div class="metric-card glass-card">
+            <strong>93%</strong>
+            <span>More relevant questions</span>
+          </div>
+          <div class="metric-card glass-card">
+            <strong>2 min</strong>
+            <span>From resume upload to interview</span>
+          </div>
+          <div class="metric-card glass-card">
+            <strong>Instant</strong>
+            <span>Feedback after every session</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="hero-visual reveal-up delay-1">
+        <div class="floating-card glass-card interview-card card-top-left">
+          <span class="card-label">Role match</span>
+          <h3>Senior Product Designer</h3>
+          <p>Behavioral, product thinking, and systems design prompts tailored to your background.</p>
+        </div>
+        <div class="floating-card glass-card interview-card card-center">
+          <div class="wave-bars" aria-hidden="true">
+            <span></span><span></span><span></span><span></span><span></span>
+          </div>
+          <h3>Voice interview mode</h3>
+          <p>Practice out loud with adaptive timing, follow-up logic, and confidence coaching.</p>
+        </div>
+        <div class="floating-card glass-card interview-card card-bottom-right">
+          <span class="card-label">Feedback report</span>
+          <div class="score-row">
+            <strong>84</strong>
+            <span>/100</span>
+          </div>
+          <p>Clarity, structure, and impact signals improved from the last session.</p>
+        </div>
+        <div class="orb orb-one"></div>
+        <div class="orb orb-two"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="features" class="section-pad section-alt">
+  <div class="container-fluid px-0">
+    <div class="section-heading reveal-up">
+      <div class="eyebrow-chip">Features</div>
+      <h2>Built like a premium product, not a demo.</h2>
+      <p>Every part of the experience is designed for focused practice, polished visuals, and meaningful feedback loops.</p>
+    </div>
+
+    <div class="row g-4 feature-grid">
+      <div class="col-md-6 col-xl-3 reveal-up">
+        <article class="feature-card glass-card h-100">
+          <div class="feature-icon">AI</div>
+          <h3>AI adaptive interviews</h3>
+          <p>Questions evolve based on your responses so each session feels realistic, challenging, and personalized.</p>
+        </article>
+      </div>
+      <div class="col-md-6 col-xl-3 reveal-up delay-1">
+        <article class="feature-card glass-card h-100">
+          <div class="feature-icon">VO</div>
+          <h3>Voice mock interviews</h3>
+          <p>Practice spoken answers in a calm, professional environment with smooth pacing and interview realism.</p>
+        </article>
+      </div>
+      <div class="col-md-6 col-xl-3 reveal-up delay-2">
+        <article class="feature-card glass-card h-100">
+          <div class="feature-icon">CV</div>
+          <h3>Resume-based questioning</h3>
+          <p>Upload a resume and receive targeted prompts drawn from experience, skills, and career trajectory.</p>
+        </article>
+      </div>
+      <div class="col-md-6 col-xl-3 reveal-up delay-3">
+        <article class="feature-card glass-card h-100">
+          <div class="feature-icon">FB</div>
+          <h3>Instant feedback reports</h3>
+          <p>See strengths, gaps, and improvement opportunities immediately after each interview session.</p>
+        </article>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="workflow" class="section-pad">
+  <div class="container-fluid px-0">
+    <div class="section-heading reveal-up">
+      <div class="eyebrow-chip">Workflow</div>
+      <h2>A clear path from upload to improvement.</h2>
+      <p>Simple, structured, and fast. The flow keeps users moving from preparation to insight without friction.</p>
+    </div>
+
+    <div class="workflow-panel glass-card reveal-up">
+      <div class="workflow-step">
+        <span class="workflow-index">01</span>
+        <div>
+          <h3>Upload resume</h3>
+          <p>Bring in your current resume and let InterviewForge infer skills, roles, and interview priorities.</p>
+        </div>
+      </div>
+      <div class="workflow-arrow">→</div>
+      <div class="workflow-step">
+        <span class="workflow-index">02</span>
+        <div>
+          <h3>Start interview</h3>
+          <p>Launch a tailored mock interview session with adaptive questioning and role-aware prompts.</p>
+        </div>
+      </div>
+      <div class="workflow-arrow">→</div>
+      <div class="workflow-step">
+        <span class="workflow-index">03</span>
+        <div>
+          <h3>Answer questions</h3>
+          <p>Practice concise, confident responses with follow-ups that react to your content in real time.</p>
+        </div>
+      </div>
+      <div class="workflow-arrow">→</div>
+      <div class="workflow-step">
+        <span class="workflow-index">04</span>
+        <div>
+          <h3>Get report</h3>
+          <p>Receive a polished feedback report that highlights strengths, clarity, and next steps.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="testimonials" class="section-pad section-alt">
+  <div class="container-fluid px-0">
+    <div class="section-heading reveal-up">
+      <div class="eyebrow-chip">Testimonials</div>
+      <h2>Mock praise from people who care about clarity.</h2>
+      <p>Social proof that feels aligned with a premium SaaS product: concise, polished, and credible.</p>
+    </div>
+
+    <div class="row g-4 testimonial-grid">
+      <div class="col-lg-4 reveal-up">
+        <article class="testimonial-card glass-card h-100">
+          <p>"The adaptive follow-ups feel close to a real hiring panel. It stopped me from memorizing answers and forced me to think."</p>
+          <div class="testimonial-meta">
+            <strong>Priya S.</strong>
+            <span>Product Manager</span>
+          </div>
+        </article>
+      </div>
+      <div class="col-lg-4 reveal-up delay-1">
+        <article class="testimonial-card glass-card h-100">
+          <p>"The resume-aware prompts are sharp. It immediately surfaced the parts of my background I usually gloss over."</p>
+          <div class="testimonial-meta">
+            <strong>Marcus T.</strong>
+            <span>Frontend Engineer</span>
+          </div>
+        </article>
+      </div>
+      <div class="col-lg-4 reveal-up delay-2">
+        <article class="testimonial-card glass-card h-100">
+          <p>"The feedback report is the part I keep coming back to. It tells me exactly what to tighten before my next interview."</p>
+          <div class="testimonial-meta">
+            <strong>Amina R.</strong>
+            <span>Data Analyst</span>
+          </div>
+        </article>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="pricing" class="section-pad pricing-section">
+  <div class="container-fluid px-0">
+    <div class="pricing-card glass-card reveal-up">
+      <div class="pricing-copy">
+        <div class="eyebrow-chip">Pricing</div>
+        <h2>Start preparing like the interview already matters.</h2>
+        <p>Launch with a premium experience, then expand into full interview coaching as your product grows.</p>
+      </div>
+      <div class="pricing-cta">
+        <div class="price-tag">Free during module 1</div>
+        <a class="btn btn-primary btn-lg hero-btn-primary" href="/">Build your interview rhythm</a>
+        <span class="pricing-note">Modern UI, production-ready scaffold, and a route structure ready for future modules.</span>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block page_scripts %}
+<script src="{{ url_for('static', filename='js/landing.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,100 @@
+<div class="result-grid">
+  <article class="result-card glass-card">
+    <div class="result-header">
+      <div>
+        <span class="result-kicker">Parsed file</span>
+        <h3>{{ parsed_result.filename }}</h3>
+      </div>
+      <span class="result-badge">{{ parsed_result.document_type | upper }}</span>
+    </div>
+    <p class="result-summary">Structured extraction completed successfully.</p>
+  </article>
+
+  {% if parsed_result.summary.skills is defined %}
+  <article class="result-card glass-card">
+    <h3>Skills</h3>
+    <div class="chip-list">
+      {% for item in parsed_result.summary.skills %}
+      <span class="chip">{{ item }}</span>
+      {% endfor %}
+    </div>
+  </article>
+  {% endif %}
+
+  {% if parsed_result.summary.projects is defined %}
+  <article class="result-card glass-card">
+    <h3>Projects</h3>
+    <ul class="result-list">
+      {% for item in parsed_result.summary.projects %}
+      <li>{{ item }}</li>
+      {% endfor %}
+    </ul>
+  </article>
+  {% endif %}
+
+  {% if parsed_result.summary.certifications is defined %}
+  <article class="result-card glass-card">
+    <h3>Certifications</h3>
+    <ul class="result-list">
+      {% for item in parsed_result.summary.certifications %}
+      <li>{{ item }}</li>
+      {% endfor %}
+    </ul>
+  </article>
+  {% endif %}
+
+  {% if parsed_result.summary.education is defined %}
+  <article class="result-card glass-card">
+    <h3>Education</h3>
+    <ul class="result-list">
+      {% for item in parsed_result.summary.education %}
+      <li>{{ item }}</li>
+      {% endfor %}
+    </ul>
+  </article>
+  {% endif %}
+
+  {% if parsed_result.summary.experience is defined %}
+  <article class="result-card glass-card">
+    <h3>Experience</h3>
+    <ul class="result-list">
+      {% for item in parsed_result.summary.experience %}
+      <li>{{ item }}</li>
+      {% endfor %}
+    </ul>
+  </article>
+  {% endif %}
+
+  {% if parsed_result.summary.required_skills is defined %}
+  <article class="result-card glass-card">
+    <h3>Required skills</h3>
+    <div class="chip-list">
+      {% for item in parsed_result.summary.required_skills %}
+      <span class="chip">{{ item }}</span>
+      {% endfor %}
+    </div>
+  </article>
+  {% endif %}
+
+  {% if parsed_result.summary.responsibilities is defined %}
+  <article class="result-card glass-card">
+    <h3>Responsibilities</h3>
+    <ul class="result-list">
+      {% for item in parsed_result.summary.responsibilities %}
+      <li>{{ item }}</li>
+      {% endfor %}
+    </ul>
+  </article>
+  {% endif %}
+
+  {% if parsed_result.summary.technologies is defined %}
+  <article class="result-card glass-card">
+    <h3>Technologies</h3>
+    <div class="chip-list">
+      {% for item in parsed_result.summary.technologies %}
+      <span class="chip">{{ item }}</span>
+      {% endfor %}
+    </div>
+  </article>
+  {% endif %}
+</div>

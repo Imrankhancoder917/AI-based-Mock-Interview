@@ -1,0 +1,19 @@
+.auth-register-page .auth-visual {
+  background: radial-gradient(circle at top left, rgba(139, 247, 215, 0.2), transparent 36%), radial-gradient(circle at bottom right, rgba(255, 184, 107, 0.12), transparent 28%);
+}
+
+.auth-register-page .auth-submit {
+  background: linear-gradient(135deg, #8ef7d9, #ffb86b);
+}
+
+.auth-register-page .auth-points span {
+  background: rgba(139, 247, 215, 0.18);
+}
+
+.auth-register-page .register-float-one {
+  right: 10%;
+}
+
+.auth-register-page .register-float-two {
+  left: 10%;
+}
