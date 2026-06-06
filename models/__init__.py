@@ -6,6 +6,11 @@ from .database import (
     JobDescription,
     Question,
     User,
+    InterviewHistory,
+    InterviewReport,
+    QuestionEvaluation,
+    InterviewAnalytics,
+    SkillAnalytics,
 )
 
 __all__ = [
@@ -16,4 +21,9 @@ __all__ = [
     "Question",
     "Answer",
     "FeedbackReport",
+    "InterviewHistory",
+    "InterviewReport",
+    "QuestionEvaluation",
+    "InterviewAnalytics",
+    "SkillAnalytics",
 ]

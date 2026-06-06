@@ -1,150 +1,428 @@
 {% extends "base.html" %}
 
 {% block page_styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard-premium.css') }}" />
 <link rel="stylesheet" href="{{ url_for('static', filename='css/report.css') }}" />
+<style>
+  /* Custom additions for history panel and selected states */
+  .active-history-item {
+    border-color: #7c8cff !important;
+    background: rgba(124, 140, 255, 0.08) !important;
+    box-shadow: 0 0 15px rgba(124, 140, 255, 0.15);
+  }
+  .history-item:hover {
+    border-color: rgba(255, 255, 255, 0.15) !important;
+    background: rgba(255, 255, 255, 0.04) !important;
+    transform: translateY(-1px);
+  }
+  .history-list::-webkit-scrollbar {
+    width: 6px;
+  }
+  .history-list::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 10px;
+  }
+  .history-list::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+  }
+  .history-list::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.2);
+  }
+  .btn-delete-report:hover {
+    color: #f87171 !important;
+    transform: scale(1.1);
+  }
+  /* Re-aligning circular rings to be consistent and responsive */
+  .score-ring {
+    margin: 0 auto 1rem;
+  }
+</style>
 {% endblock %}
 
 {% block content %}
-<section class="report-shell">
-  <header class="report-hero glass-card reveal-up visible">
-    <div>
-      <div class="eyebrow-chip">Final feedback report</div>
-      <h1>Interview performance breakdown for {{ report.candidate_name }}.</h1>
-      <p>Analytics-grade feedback with overall scoring, skill signals, narrative clarity, resume honesty, and an exportable PDF version.</p>
+<div class="dash-shell">
+  <!-- Sidebar -->
+  <aside class="dash-sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-logo">IF</div>
+      <div class="brand-text">InterviewForge</div>
     </div>
 
-    <div class="report-actions">
-      <a class="primary-action" href="{{ pdf_url }}">Download PDF</a>
-      <a class="secondary-action" href="{{ interview_url }}">Back to interview room</a>
+    <nav class="sidebar-nav">
+      <a href="{{ url_for('landing') }}"
+        class="nav-btn-premium {% if request.endpoint == 'landing' %}active{% endif %}">
+        <div class="nav-icon-container"><i class="bi bi-house-door"></i></div> <span>Home</span>
+      </a>
+      <a href="{{ url_for('dashboard') }}"
+        class="nav-btn-premium {% if request.endpoint == 'dashboard' %}active{% endif %}">
+        <div class="nav-icon-container"><i class="bi bi-grid"></i></div> <span>Dashboard</span>
+      </a>
+      <a href="{{ url_for('interview_room') }}"
+        class="nav-btn-premium {% if request.endpoint == 'interview_room' %}active{% endif %}">
+        <div class="nav-icon-container"><i class="bi bi-camera-video"></i></div> <span>Mock Interview</span>
+      </a>
+      <a href="{{ url_for('reports.latest_report') }}"
+        class="nav-btn-premium {% if request.endpoint == 'reports.latest_report' %}active{% endif %}">
+        <div class="nav-icon-container"><i class="bi bi-download"></i></div> <span>Download Report</span>
+      </a>
+      <a href="{{ url_for('upload') }}" class="nav-btn-premium {% if request.endpoint == 'upload' %}active{% endif %}">
+        <div class="nav-icon-container"><i class="bi bi-cloud-upload"></i></div> <span>Upload Resume</span>
+      </a>
+      <a href="{{ url_for('logout') }}" class="nav-btn-premium nav-btn-logout">
+        <div class="nav-icon-container"><i class="bi bi-box-arrow-right"></i></div> <span>Logout</span>
+      </a>
+    </nav>
+
+    <div class="sidebar-bottom">
+      <div class="sidebar-ai-card">
+        <div class="sidebar-ai-header">
+          <span class="online-dot"></span> Online
+        </div>
+        <img src="{{ url_for('static', filename='img/robot image.png') }}" class="sidebar-robot" alt="AI Assistant">
+        <h4>Need Help?</h4>
+        <p>I'm here to analyze your performance.</p>
+        <button class="nav-btn-premium" style="width: 100%; margin-top: 8px;">
+          <div class="nav-icon-container"><i class="bi bi-chat-dots"></i></div>
+          <span>Chat with AI</span>
+        </button>
+
+      </div>
+      <!-- User Profile inside Sidebar -->
+      {% include 'components/profile_card.html' %}
     </div>
-  </header>
+  </aside>
 
-  <section class="score-grid">
-    <article class="score-card glass-card reveal-up visible">
-      <div class="score-ring" data-score="{{ report.overall_score }}">
-        <svg viewBox="0 0 120 120" aria-hidden="true">
-          <circle class="track" cx="60" cy="60" r="50"></circle>
-          <circle class="progress" cx="60" cy="60" r="50"></circle>
-        </svg>
-        <div class="ring-center">
-          <strong>{{ report.overall_score }}</strong>
-          <span>Overall</span>
+  <!-- Main Content -->
+  <main class="dash-main report-main">
+    <!-- Top Bar -->
+    <header class="dash-topbar">
+      <div class="topbar-left">
+        <h1>Interview Performance Report 📊</h1>
+        <p>Analytics-grade feedback and skill assessment.</p>
+      </div>
+      <div class="topbar-right">
+        {% if not is_empty and pdf_url %}
+        <a class="btn btn-primary shadow-sm" href="{{ pdf_url }}"
+          style="background: linear-gradient(135deg, #2563EB, #8B5CF6); border: none; border-radius: 12px; font-weight: 600; font-size: 0.9rem; padding: 0.6rem 1.2rem; display: inline-flex; align-items: center; gap: 0.5rem;">
+          <i class="bi bi-download"></i> Export PDF
+        </a>
+        {% endif %}
+      </div>
+    </header>
+
+    <div class="dash-content">
+      {% if is_empty %}
+      <!-- Empty State -->
+      <div class="premium-card text-center p-5 my-5 shadow-lg border-0 position-relative overflow-hidden"
+        style="background: linear-gradient(135deg, rgba(30, 41, 59, 0.7), rgba(15, 23, 42, 0.8)); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 24px;">
+        <div class="position-absolute top-0 start-0 w-100 h-100" 
+          style="background: radial-gradient(circle at top right, rgba(139, 92, 246, 0.15), transparent 50%), radial-gradient(circle at bottom left, rgba(37, 99, 235, 0.15), transparent 50%); pointer-events: none;">
+        </div>
+        <div class="py-4 position-relative" style="z-index: 1;">
+          <div class="mb-4">
+            <div class="d-inline-flex align-items-center justify-content-center"
+              style="width: 96px; height: 96px; background: rgba(139, 92, 246, 0.1); border: 1px solid rgba(139, 92, 246, 0.25); border-radius: 50%; box-shadow: 0 0 25px rgba(139, 92, 246, 0.2);">
+              <i class="bi bi-bar-chart-line-fill" style="font-size: 3rem; background: linear-gradient(135deg, #a78bfa, #818cf8); -webkit-background-clip: text; -webkit-text-fill-color: transparent;"></i>
+            </div>
+          </div>
+          <h2 class="mb-3 text-white" style="font-weight: 700; letter-spacing: -0.5px;">No Interview Reports Found</h2>
+          <p class="text-muted mx-auto mb-4" style="max-width: 500px; font-size: 1.1rem; line-height: 1.6;">
+            You haven't completed any mock interviews yet. Complete your first practice session with our AI-based engine to get a detailed performance assessment, strengths, weaknesses, and a custom roadmap.
+          </p>
+          <div class="d-flex justify-content-center gap-3">
+            <a href="{{ url_for('upload') }}" class="btn btn-outline-light px-4 py-2.5 rounded-pill"
+              style="border-color: rgba(255, 255, 255, 0.2); font-weight: 600; font-size: 0.95rem; backdrop-filter: blur(8px);">
+              <i class="bi bi-cloud-upload me-2"></i> Upload Resume
+            </a>
+            <a href="{{ interview_url }}" class="btn btn-primary px-5 py-2.5 rounded-pill shadow-lg"
+              style="background: linear-gradient(135deg, #2563EB, #8B5CF6); border: none; font-weight: 600; font-size: 0.95rem; box-shadow: 0 4px 15px rgba(139, 92, 246, 0.4);">
+              <i class="bi bi-camera-video me-2"></i> Start Mock Interview
+            </a>
+          </div>
         </div>
       </div>
-      <h3>Overall score</h3>
-      <p>The combined signal across answer quality, consistency, and interview readiness.</p>
-    </article>
+      {% else %}
+      
+      <!-- Reverted Clean Stable Layout with History & Deletion -->
+      <div class="row g-4">
+        <!-- Left Panel: Interview History -->
+        <div class="col-lg-4 col-md-5">
+          <div class="panel glass-card" style="border-radius: 20px; padding: 1.25rem;">
+            <div class="panel-head" style="margin-bottom: 1.25rem; display: flex; justify-content: space-between; align-items: center;">
+              <h3 style="color: #fff; font-size: 1.15rem; font-weight: 600; margin: 0;"><i class="bi bi-clock-history me-2" style="color: #7c8cff;"></i>History</h3>
+              <span class="badge rounded-pill" style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); color: var(--muted); font-size: 0.75rem;">{{ histories | length }} sessions</span>
+            </div>
+            
+            <div class="history-list" style="max-height: 75vh; overflow-y: auto; display: flex; flex-direction: column; gap: 0.75rem; padding-right: 0.25rem;">
+              {% for h in histories %}
+              <div class="history-item glass-card {% if h.interview_session_id == selected_id %}active-history-item{% endif %}" 
+                   style="padding: 0.9rem; border-radius: 14px; border: 1px solid rgba(255, 255, 255, 0.06); background: rgba(255, 255, 255, 0.015); display: flex; justify-content: space-between; align-items: center; transition: all 0.2s ease; cursor: pointer;"
+                   onclick="window.location.href='{{ url_for('reports.latest_report') }}?id={{ h.interview_session_id }}'">
+                <div style="flex-grow: 1; min-width: 0; padding-right: 0.5rem;">
+                  <h4 style="font-size: 0.95rem; margin: 0 0 0.25rem; font-weight: 600; color: #fff; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">{{ h.interview_name }}</h4>
+                  <div style="font-size: 0.75rem; color: var(--muted); display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                    <span><i class="bi bi-calendar-event me-1"></i>{{ h.date.strftime("%b %d, %Y") }}</span>
+                    <span><i class="bi bi-stopwatch me-1"></i>{{ h.duration_mins }} min</span>
+                  </div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 0.5rem; flex-shrink: 0;">
+                  <span class="badge" style="background: rgba(124, 140, 255, 0.12); color: #8ef7d9; font-weight: 700; font-size: 0.85rem; padding: 0.35rem 0.5rem; border-radius: 8px; border: 1px solid rgba(142, 247, 217, 0.15);">{{ h.overall_score }}%</span>
+                  <button class="btn-delete-report" data-session-id="{{ h.interview_session_id }}" style="background: none; border: none; color: #ef4444; padding: 0.25rem; cursor: pointer; transition: transform 0.15s ease; font-size: 1.1rem;" onclick="event.stopPropagation(); triggerDeleteModal({{ h.interview_session_id }})">
+                    <i class="bi bi-trash"></i>
+                  </button>
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
 
-    <article class="score-card glass-card reveal-up visible">
-      <div class="score-ring secondary" data-score="{{ report.technical_score }}">
-        <svg viewBox="0 0 120 120" aria-hidden="true">
-          <circle class="track" cx="60" cy="60" r="50"></circle>
-          <circle class="progress" cx="60" cy="60" r="50"></circle>
-        </svg>
-        <div class="ring-center">
-          <strong>{{ report.technical_score }}</strong>
-          <span>Technical</span>
+        <!-- Right Panel: Report Details -->
+        <div class="col-lg-8 col-md-7">
+          <div class="report-actions" style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+            <div>
+              <h2 style="font-size: 1.4rem; margin: 0; font-weight: 700; color: #fff;">{{ overview.name }}</h2>
+              <p style="margin: 0.2rem 0 0; font-size: 0.85rem; color: var(--muted);">
+                {{ overview.type }} &bull; {{ overview.date }} &bull; <span class="badge bg-dark border" style="border-color: rgba(255,255,255,0.1) !important; font-size: 0.75rem; padding: 0.25rem 0.5rem; text-transform: capitalize;">{{ overview.difficulty }}</span>
+              </p>
+            </div>
+          </div>
+
+          <!-- Original Score Grid -->
+          <section class="score-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-top: 0; margin-bottom: 1.5rem;">
+            <article class="score-card glass-card reveal-up visible" style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 1.25rem; border-radius: 20px; text-align: center;">
+              <div class="score-ring" data-score="{{ report.overall_score }}">
+                <svg viewBox="0 0 120 120" aria-hidden="true">
+                  <circle class="track" cx="60" cy="60" r="50"></circle>
+                  <circle class="progress" cx="60" cy="60" r="50"></circle>
+                </svg>
+                <div class="ring-center">
+                  <strong style="color: #fff; font-size: 1.75rem;">{{ report.overall_score }}</strong>
+                  <span style="font-size: 0.7rem; color: var(--muted);">Overall</span>
+                </div>
+              </div>
+              <h3 style="font-size: 1rem; margin: 0.25rem 0 0; color: #fff; font-weight: 600;">Overall Score</h3>
+            </article>
+
+            <article class="score-card glass-card reveal-up visible" style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 1.25rem; border-radius: 20px; text-align: center;">
+              <div class="score-ring secondary" data-score="{{ report.technical_score }}">
+                <svg viewBox="0 0 120 120" aria-hidden="true">
+                  <circle class="track" cx="60" cy="60" r="50"></circle>
+                  <circle class="progress" cx="60" cy="60" r="50"></circle>
+                </svg>
+                <div class="ring-center">
+                  <strong style="color: #fff; font-size: 1.75rem;">{{ report.technical_score }}</strong>
+                  <span style="font-size: 0.7rem; color: var(--muted);">Technical</span>
+                </div>
+              </div>
+              <h3 style="font-size: 1rem; margin: 0.25rem 0 0; color: #fff; font-weight: 600;">Technical</h3>
+            </article>
+
+            <article class="score-card glass-card reveal-up visible" style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 1.25rem; border-radius: 20px; text-align: center;">
+              <div class="score-ring tertiary" data-score="{{ report.communication_score }}">
+                <svg viewBox="0 0 120 120" aria-hidden="true">
+                  <circle class="track" cx="60" cy="60" r="50"></circle>
+                  <circle class="progress" cx="60" cy="60" r="50"></circle>
+                </svg>
+                <div class="ring-center">
+                  <strong style="color: #fff; font-size: 1.75rem;">{{ report.communication_score }}</strong>
+                  <span style="font-size: 0.7rem; color: var(--muted);">Comms</span>
+                </div>
+              </div>
+              <h3 style="font-size: 1rem; margin: 0.25rem 0 0; color: #fff; font-weight: 600;">Communication</h3>
+            </article>
+          </section>
+
+          <!-- Strengths, Weaknesses, and Roadmap panels -->
+          <div class="row g-3 mb-4">
+            <div class="col-md-6">
+              <article class="panel glass-card" style="border-radius: 20px; padding: 1.25rem; height: 100%;">
+                <div class="panel-head" style="margin-bottom: 0.75rem;">
+                  <h3 style="color: #fff; font-size: 1.1rem; font-weight: 600; margin: 0;"><i class="bi bi-check-circle text-success me-2"></i>Strengths</h3>
+                </div>
+                <div class="chip-list" style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+                  {% for item in report.strengths %}
+                  <span class="chip positive" style="font-size: 0.85rem; color: #8ef7d9; background: rgba(142, 247, 217, 0.04); border: 1px solid rgba(142, 247, 217, 0.15); padding: 0.4rem 0.65rem; border-radius: 10px;">{{ item }}</span>
+                  {% endfor %}
+                </div>
+              </article>
+            </div>
+
+            <div class="col-md-6">
+              <article class="panel glass-card" style="border-radius: 20px; padding: 1.25rem; height: 100%;">
+                <div class="panel-head" style="margin-bottom: 0.75rem;">
+                  <h3 style="color: #fff; font-size: 1.1rem; font-weight: 600; margin: 0;"><i class="bi bi-exclamation-triangle text-warning me-2"></i>Areas to Improve</h3>
+                </div>
+                <div class="chip-list" style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+                  {% for item in report.weaknesses %}
+                  <span class="chip warning" style="font-size: 0.85rem; color: #ffb86b; background: rgba(255, 184, 107, 0.04); border: 1px solid rgba(255, 184, 107, 0.15); padding: 0.4rem 0.65rem; border-radius: 10px;">{{ item }}</span>
+                  {% endfor %}
+                </div>
+              </article>
+            </div>
+          </div>
+
+          <!-- Recommendations (Roadmap) Panel -->
+          <article class="panel glass-card mb-4" style="border-radius: 20px; padding: 1.25rem;">
+            <div class="panel-head" style="margin-bottom: 0.75rem;">
+              <h3 style="color: #fff; font-size: 1.1rem; font-weight: 600; margin: 0;"><i class="bi bi-map me-2" style="color: #7c8cff;"></i>Recommended Roadmap</h3>
+            </div>
+            <ol class="roadmap-list" style="padding-left: 1.25rem; display: flex; flex-direction: column; gap: 0.5rem; margin: 0;">
+              {% for item in report.improvement_roadmap %}
+              <li style="color: var(--muted); line-height: 1.6; font-size: 0.9rem;">{{ item }}</li>
+              {% endfor %}
+            </ol>
+          </article>
+
+          <!-- Transcript / Interview Summary Panel -->
+          <article class="panel glass-card mb-4" style="border-radius: 20px; padding: 1.25rem;">
+            <div class="panel-head" style="margin-bottom: 0.75rem;">
+              <h3 style="color: #fff; font-size: 1.1rem; font-weight: 600; margin: 0;"><i class="bi bi-card-text me-2" style="color: #7c8cff;"></i>Interview Summary</h3>
+            </div>
+            <p style="color: var(--muted); line-height: 1.65; margin: 0; font-size: 0.9rem;">{{ report.transcript_summary }}</p>
+          </article>
+
+          <!-- Detailed Question Analysis Section -->
+          <article class="panel glass-card" style="border-radius: 20px; padding: 1.5rem; margin-bottom: 1.5rem;">
+            <div class="panel-head" style="margin-bottom: 1.5rem;">
+              <h3 style="color: #fff; font-size: 1.2rem; font-weight: 600; margin: 0;"><i class="bi bi-journal-check me-2" style="color: #7c8cff;"></i>Question-by-Question Evaluation</h3>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+              {% for q in questions %}
+              <div style="border-bottom: 1px solid rgba(255, 255, 255, 0.08); padding-bottom: 1.5rem; {% if loop.last %}border-bottom: none; padding-bottom: 0;{% endif %}">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; margin-bottom: 0.5rem;">
+                  <h4 style="font-size: 1rem; font-weight: 600; color: #fff; margin: 0; line-height: 1.45;">Q{{ loop.index }}: {{ q.question }}</h4>
+                  {% set score_val = q.score | float %}
+                  {% if score_val >= 8 %}
+                  <span class="badge bg-success rounded-pill px-2.5 py-1.5" style="font-size: 0.75rem; font-weight: 600;">Excellent ({{ score_val }}/10)</span>
+                  {% elif score_val >= 5 %}
+                  <span class="badge bg-warning text-dark rounded-pill px-2.5 py-1.5" style="font-size: 0.75rem; font-weight: 600;">Good ({{ score_val }}/10)</span>
+                  {% else %}
+                  <span class="badge bg-danger rounded-pill px-2.5 py-1.5" style="font-size: 0.75rem; font-weight: 600;">Needs Work ({{ score_val }}/10)</span>
+                  {% endif %}
+                </div>
+                
+                <div style="margin-left: 0.5rem; margin-top: 0.75rem; display: flex; flex-direction: column; gap: 0.75rem;">
+                  <div>
+                    <span style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); font-weight: 700;">Your Answer:</span>
+                    <p style="color: #d1d5db; margin: 0.2rem 0 0; line-height: 1.6; font-size: 0.9rem; white-space: pre-wrap;">{{ q.answer }}</p>
+                  </div>
+                  
+                  {% if q.evaluation %}
+                  <div>
+                    <span style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; color: #7c8cff; font-weight: 700;">Feedback:</span>
+                    <p style="color: #9ca3af; margin: 0.2rem 0 0; line-height: 1.6; font-size: 0.9rem;">{{ q.evaluation }}</p>
+                  </div>
+                  {% endif %}
+
+                  {% if q.suggestions %}
+                  <div>
+                    <span style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; color: #ffb86b; font-weight: 700;">Improvement Areas:</span>
+                    <ul style="margin: 0.2rem 0 0; padding-left: 1.25rem; color: #9ca3af; line-height: 1.6; font-size: 0.9rem;">
+                      {% for item in q.suggestions %}
+                      <li>{{ item }}</li>
+                      {% endfor %}
+                    </ul>
+                  </div>
+                  {% endif %}
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+          </article>
         </div>
       </div>
-      <h3>Technical score</h3>
-      <p>How well you reasoned through implementation, tradeoffs, and real-world constraints.</p>
-    </article>
-
-    <article class="score-card glass-card reveal-up visible">
-      <div class="score-ring tertiary" data-score="{{ report.communication_score }}">
-        <svg viewBox="0 0 120 120" aria-hidden="true">
-          <circle class="track" cx="60" cy="60" r="50"></circle>
-          <circle class="progress" cx="60" cy="60" r="50"></circle>
-        </svg>
-        <div class="ring-center">
-          <strong>{{ report.communication_score }}</strong>
-          <span>Communication</span>
-        </div>
-      </div>
-      <h3>Communication score</h3>
-      <p>Clarity, structure, and how consistently your answers landed with interview pressure.</p>
-    </article>
-  </section>
-
-  <section class="report-grid">
-    <article class="panel glass-card reveal-up visible">
-      <div class="panel-head">
-        <h3>Strengths</h3>
-        <span>{{ report.strengths | length }} signals</span>
-      </div>
-      <div class="chip-list">
-        {% for item in report.strengths %}
-        <span class="chip positive">{{ item }}</span>
-        {% endfor %}
-      </div>
-    </article>
-
-    <article class="panel glass-card reveal-up visible">
-      <div class="panel-head">
-        <h3>Weaknesses</h3>
-        <span>{{ report.weaknesses | length }} flags</span>
-      </div>
-      <div class="chip-list">
-        {% for item in report.weaknesses %}
-        <span class="chip warning">{{ item }}</span>
-        {% endfor %}
-      </div>
-    </article>
-
-    <article class="panel glass-card reveal-up visible full-span">
-      <div class="panel-head">
-        <h3>Improvement roadmap</h3>
-        <span>Next steps</span>
-      </div>
-      <ol class="roadmap-list">
-        {% for item in report.improvement_roadmap %}
-        <li>{{ item }}</li>
-        {% endfor %}
-      </ol>
-    </article>
-
-    <article class="panel glass-card reveal-up visible">
-      <div class="panel-head">
-        <h3>Resume honesty check</h3>
-        <span>Consistency</span>
-      </div>
-      <p class="panel-copy">{{ report.resume_honesty_check }}</p>
-    </article>
-
-    <article class="panel glass-card reveal-up visible">
-      <div class="panel-head">
-        <h3>Transcript summary</h3>
-        <span>{{ report.question_count }} turns</span>
-      </div>
-      <p class="panel-copy">{{ report.transcript_summary }}</p>
-    </article>
-
-    <article class="panel glass-card reveal-up visible full-span">
-      <div class="panel-head">
-        <h3>Session highlights</h3>
-        <span>Top moments</span>
-      </div>
-      <div class="timeline">
-        {% for item in report.session_highlights %}
-        <div class="timeline-item">
-          <span class="dot"></span>
-          <p>{{ item }}</p>
-        </div>
-        {% endfor %}
-      </div>
-    </article>
-  </section>
-
-  <section class="footer-cta glass-card reveal-up visible">
-    <div>
-      <div class="eyebrow-chip">Report metadata</div>
-      <p>Average answer length: {{ report.average_answer_length }} words. Average evaluation score: {{ report.average_evaluation_score }}/10.</p>
+      {% endif %}
     </div>
-    <a class="primary-action" href="{{ pdf_url }}">Download report</a>
-  </section>
-</section>
+  </main>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-labelledby="deleteConfirmModalLabel" aria-hidden="true" style="backdrop-filter: blur(8px);">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content glass-card" style="border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; background: rgba(15, 23, 42, 0.95);">
+      <div class="modal-header border-0 pb-0">
+        <h5 class="modal-title text-white" id="deleteConfirmModalLabel" style="font-weight: 700;">Delete Interview Report</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body py-3">
+        <p class="text-muted mb-0" style="font-size: 0.9rem; line-height: 1.6;">Are you sure you want to permanently delete this interview report? This will delete all scores, feedback, history, and associated data. This action cannot be undone.</p>
+      </div>
+      <div class="modal-footer border-0 pt-0">
+        <button type="button" class="btn btn-outline-light rounded-pill px-4" data-bs-dismiss="modal" style="font-weight: 600; font-size: 0.85rem; border-color: rgba(255,255,255,0.15);">Cancel</button>
+        <button type="button" id="btnConfirmDelete" class="btn btn-danger rounded-pill px-4" style="font-weight: 600; font-size: 0.85rem; background: #ef4444; border: none;">Delete Report</button>
+      </div>
+    </div>
+  </div>
+</div>
 {% endblock %}
 
 {% block page_scripts %}
-<script src="{{ url_for('static', filename='js/report.js') }}"></script>
+<script>
+  let sessionToDelete = null;
+  let deleteModalObj = null;
+
+  function triggerDeleteModal(sessionId) {
+    sessionToDelete = sessionId;
+    if (!deleteModalObj) {
+      deleteModalObj = new bootstrap.Modal(document.getElementById('deleteConfirmModal'));
+    }
+    deleteModalObj.show();
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    // Animate score rings
+    const rings = document.querySelectorAll('.score-ring');
+    rings.forEach(ring => {
+      const score = parseInt(ring.getAttribute('data-score')) || 0;
+      const progressCircle = ring.querySelector('.progress');
+      if (progressCircle) {
+        // Circumference is 314 (2 * pi * r where r = 50)
+        const circumference = 314;
+        const offset = circumference - (score / 100) * circumference;
+        setTimeout(() => {
+          progressCircle.style.strokeDashoffset = offset;
+        }, 150);
+      }
+    });
+
+    // Delete handler
+    const btnConfirmDelete = document.getElementById("btnConfirmDelete");
+    if (btnConfirmDelete) {
+      btnConfirmDelete.addEventListener("click", async () => {
+        if (!sessionToDelete) return;
+        
+        btnConfirmDelete.disabled = true;
+        btnConfirmDelete.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Deleting...';
+        
+        try {
+          const response = await fetch(`/api/interviews/${sessionToDelete}`, {
+            method: 'DELETE',
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          });
+          
+          const result = await response.json();
+          if (response.ok && result.ok) {
+            // Redirect back to reports page to show empty state or reload
+            window.location.href = "{{ url_for('reports.latest_report') }}";
+          } else {
+            alert(result.error || "Failed to delete interview report.");
+            btnConfirmDelete.disabled = false;
+            btnConfirmDelete.innerHTML = "Delete Report";
+            if (deleteModalObj) deleteModalObj.hide();
+          }
+        } catch (err) {
+          console.error(err);
+          alert("An error occurred while deleting the report.");
+          btnConfirmDelete.disabled = false;
+          btnConfirmDelete.innerHTML = "Delete Report";
+          if (deleteModalObj) deleteModalObj.hide();
+        }
+      });
+    }
+  });
+</script>
 {% endblock %}

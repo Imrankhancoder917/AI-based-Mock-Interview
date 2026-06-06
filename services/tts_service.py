@@ -24,15 +24,16 @@ class TTSService:
     """Generates short MP3 responses using edge-tts (Microsoft neural voices).
 
     The public API is kept compatible with the previous implementation so
-    callers do not need to change. This implementation uses the en-US-AriaNeural
-    voice by default and returns MP3 bytes for browser playback.
+    callers do not need to change. This implementation uses the en-GB-RyanNeural
+    voice (Paul Bettany / JARVIS style) by default and returns MP3 bytes for
+    browser playback.
     """
 
     def __init__(self, language: str = "en-US", slow: bool = False, voice: Optional[str] = None):
         self.language = language
         self.slow = slow
-        # prefer explicit voice or fallback to en-US-AriaNeural
-        self.voice = voice or os.environ.get("TTS_VOICE", "en-US-AriaNeural")
+        # prefer explicit voice or fallback to en-GB-RyanNeural (Paul Bettany / JARVIS style)
+        self.voice = voice or os.environ.get("TTS_VOICE", "en-GB-RyanNeural")
 
     def synthesize(self, text: str, language: str | None = None, slow: bool | None = None) -> SpeechResult:
         normalized_text = self._normalize_text(text)

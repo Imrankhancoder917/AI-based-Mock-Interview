@@ -69,7 +69,10 @@ class InterviewAudioHandler {
 
   async startRecording() {
     if (!navigator.mediaDevices || !window.MediaRecorder) {
-      throw new Error("Audio recording is not supported in this browser.");
+      if (window.location.protocol === "http:" && window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1") {
+        throw new Error("Microphone access is blocked in insecure contexts. Please access this app via http://localhost:5001 or configure HTTPS to enable audio recording.");
+      }
+      throw new Error("Audio recording is not supported in this browser. Please check browser permissions.");
     }
 
     if (this.recording) {
@@ -102,7 +105,8 @@ class InterviewAudioHandler {
       }
     });
 
-    this.mediaRecorder.start();
+    // Start with a timeslice of 250ms to ensure continuous dataavailable events (highly recommended for Safari/iOS compatibility)
+    this.mediaRecorder.start(250);
     this.setRecording(true);
     this.setStatus("Recording", "Speak your answer naturally. The browser mic is sending audio to the backend.");
   }
@@ -126,7 +130,20 @@ class InterviewAudioHandler {
 
   async transcribe(blob) {
     const formData = new FormData();
-    formData.append("audio", blob, "interview.webm");
+    // Resolve dynamic extension based on actual browser MIME container type to avoid Groq decoding failures
+    let extension = "webm";
+    if (blob.type) {
+      if (blob.type.includes("mp4") || blob.type.includes("m4a")) {
+        extension = "mp4";
+      } else if (blob.type.includes("ogg")) {
+        extension = "ogg";
+      } else if (blob.type.includes("wav")) {
+        extension = "wav";
+      } else if (blob.type.includes("webm")) {
+        extension = "webm";
+      }
+    }
+    formData.append("audio", blob, `interview.${extension}`);
 
     const response = await fetch(this.endpoints.transcribe, {
       method: "POST",

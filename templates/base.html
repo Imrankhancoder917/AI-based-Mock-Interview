@@ -1,110 +1,196 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="description" content="InterviewForge - AI adaptive mock interviews with resume-aware questions, voice practice, and instant feedback." />
-    <title>{{ title or "InterviewForge" }}</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet" />
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous" />
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/global.css') }}" />
-    {% block page_styles %}{% endblock %}
-  </head>
-  <body class="{{ body_class or '' }}">
-    <div class="site-shell">
-      <div class="ambient ambient-one"></div>
-      <div class="ambient ambient-two"></div>
-        {% if page_type == 'auth' %}
-        <header class="site-header auth-header">
-          <nav class="navbar auth-nav">
-            <div class="container-fluid px-0">
-              <a class="navbar-brand brand-mark" href="{{ url_for('landing') }}">
-                <span class="brand-icon">IF</span>
-                <span>InterviewForge</span>
-              </a>
-              <div class="auth-nav-links">
-                {% if request.endpoint == 'login' %}
-                <a class="auth-nav-link" href="{{ url_for('register') }}">Create account</a>
-                {% else %}
-                <a class="auth-nav-link" href="{{ url_for('login') }}">Sign in</a>
-                {% endif %}
-                <a class="btn btn-sm btn-outline-light nav-cta" href="{{ url_for('landing') }}">Back home</a>
-              </div>
-            </div>
-          </nav>
-        </header>
-        {% else %}
-        <header class="site-header">
-          <nav class="navbar navbar-expand-lg navbar-dark site-nav">
-            <div class="container-fluid px-0">
-              <a class="navbar-brand brand-mark" href="{{ url_for('landing') }}">
-                <span class="brand-icon">IF</span>
-                <span>InterviewForge</span>
-              </a>
-              <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#siteNavbar" aria-controls="siteNavbar" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-              </button>
-              <div class="collapse navbar-collapse" id="siteNavbar">
-                <ul class="navbar-nav ms-auto align-items-lg-center gap-lg-3 mt-3 mt-lg-0">
-                  <li class="nav-item"><a class="nav-link" href="#features">Features</a></li>
-                  <li class="nav-item"><a class="nav-link" href="#workflow">Workflow</a></li>
-                  <li class="nav-item"><a class="nav-link" href="#testimonials">Testimonials</a></li>
-                  <li class="nav-item"><a class="nav-link" href="#pricing">Pricing</a></li>
-                  {% if current_user.is_authenticated %}
-                  <li class="nav-item"><a class="nav-link" href="{{ url_for('dashboard') }}">Dashboard</a></li>
-                  <li class="nav-item"><a class="nav-link" href="{{ url_for('interview_room') }}">Interview Room</a></li>
-                  <li class="nav-item"><a class="nav-link" href="{{ url_for('reports.latest_report') }}">Reports</a></li>
-                  <li class="nav-item"><a class="nav-link" href="{{ url_for('upload') }}">Upload</a></li>
-                  <li class="nav-item"><a class="nav-link" href="{{ url_for('logout') }}">Logout</a></li>
-                  {% else %}
-                  <li class="nav-item ms-lg-2"><a class="btn btn-sm btn-outline-light nav-cta" href="{{ url_for('login') }}">Sign in</a></li>
-                  {% endif %}
-                </ul>
-              </div>
-            </div>
-          </nav>
-        </header>
-        {% endif %}
 
-      <main>
-          <div class="container-fluid px-0">
-            {% with messages = get_flashed_messages(with_categories=true) %}
-              {% if messages %}
-                <div class="flash-stack">
-                  {% for category, message in messages %}
-                    <div class="flash-message flash-{{ category }}">{{ message }}</div>
-                  {% endfor %}
-                </div>
-              {% endif %}
-            {% endwith %}
-          </div>
-        {% block content %}{% endblock %}
-      </main>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description"
+    content="InterviewForge - AI adaptive mock interviews with resume-aware questions, voice practice, and instant feedback." />
+  <title>{{ title or "InterviewForge" }}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap"
+    rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
+    integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/global.css') }}" />
+  {% block page_styles %}{% endblock %}
+</head>
 
-        {% if page_type != 'auth' %}
-      <footer class="site-footer">
+<body class="{{ body_class or '' }}">
+  <div class="site-shell">
+    <div class="ambient ambient-one"></div>
+    <div class="ambient ambient-two"></div>
+    {% if page_type == 'auth' %}
+    <header class="site-header auth-header">
+      <nav class="navbar auth-nav">
         <div class="container-fluid px-0">
-          <div class="footer-card glass-card">
-            <div class="row g-4 align-items-center">
-              <div class="col-lg-6">
-                <div class="footer-brand">InterviewForge</div>
-                <p class="footer-copy">Adaptive interview practice designed to feel premium, focused, and built for modern candidates.</p>
-              </div>
-              <div class="col-lg-6 text-lg-end">
-                <a class="footer-link" href="#features">Features</a>
-                <a class="footer-link" href="#workflow">Workflow</a>
-                <a class="footer-link" href="#pricing">Pricing</a>
-              </div>
+          <a class="navbar-brand brand-mark" href="{{ url_for('landing') }}">
+            <span class="brand-icon">IF</span>
+            <span>InterviewForge</span>
+          </a>
+          <div class="auth-nav-links">
+            {% if request.endpoint == 'login' %}
+            <a class="auth-nav-link" href="{{ url_for('register') }}">Create account</a>
+            {% else %}
+            <a class="auth-nav-link" href="{{ url_for('login') }}">Sign in</a>
+            {% endif %}
+            <a class="btn btn-sm btn-outline-light nav-cta" href="{{ url_for('landing') }}">Back home</a>
+          </div>
+        </div>
+      </nav>
+    </header>
+    {% else %}
+    <header class="site-header">
+      <nav class="navbar navbar-expand-lg navbar-dark site-nav">
+        <div class="container-fluid px-0">
+          <a class="navbar-brand brand-mark d-flex flex-column" href="{{ url_for('landing') }}">
+            <div class="d-flex align-items-center">
+              <span class="brand-icon"
+                style="background: linear-gradient(135deg, #2563EB, #8B5CF6); color: white; border-radius: 8px; padding: 0.2rem 0.5rem; font-size: 1.2rem; font-weight: bold; margin-right: 0.5rem; border: none;">IF</span>
+              <span class="fw-bold text-dark" style="font-size: 1.4rem;">InterviewForge</span>
+            </div>
+            <small class="text-muted fw-medium"
+              style="font-size: 0.75rem; margin-left: 2.7rem; margin-top: -0.2rem;">Forge Your Future ✨</small>
+          </a>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#siteNavbar"
+            aria-controls="siteNavbar" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+          </button>
+          <div class="collapse navbar-collapse" id="siteNavbar">
+            {% if current_user.is_authenticated %}
+            <ul class="navbar-nav mx-auto align-items-lg-center gap-lg-3 mt-3 mt-lg-0">
+              <li class="nav-item"><a class="nav-btn-premium {% if request.endpoint == 'dashboard' %}active{% endif %}"
+                  href="{{ url_for('dashboard') }}">
+                  <div class="nav-icon-container"><i class="bi bi-grid"></i></div> <span>Dashboard</span>
+                </a></li>
+              <li class="nav-item"><a class="nav-btn-premium {% if request.endpoint == 'upload' %}active{% endif %}"
+                  href="{{ url_for('upload') }}">
+                  <div class="nav-icon-container"><i class="bi bi-cloud-upload"></i></div> <span>Upload Resume</span>
+                </a></li>
+              <li class="nav-item"><a
+                  class="nav-btn-premium {% if request.endpoint == 'interview_room' %}active{% endif %}"
+                  href="{{ url_for('interview_room') }}">
+                  <div class="nav-icon-container"><i class="bi bi-mic"></i></div> <span>Mock Interview</span>
+                </a></li>
+              <li class="nav-item"><a
+                  class="nav-btn-premium {% if request.endpoint == 'reports.latest_report' %}active{% endif %}"
+                  href="{{ url_for('reports.latest_report') }}">
+                  <div class="nav-icon-container"><i class="bi bi-file-earmark-bar-graph"></i></div>
+                  <span>Reports</span>
+                </a></li>
+            </ul>
+            <ul class="navbar-nav ms-auto align-items-lg-center gap-lg-3 mt-3 mt-lg-0">
+              <li class="nav-item me-0"><a class="nav-btn-premium nav-btn-logout" href="{{ url_for('logout') }}">
+                  <div class="nav-icon-container"><i class="bi bi-box-arrow-right"></i></div> <span>Logout</span>
+                </a></li>
+              {% if request.endpoint == 'landing' %}
+              <li class="nav-item d-flex align-items-center">
+                {% include 'components/navbar_profile.html' %}
+              </li>
+              {% endif %}
+            </ul>
+            {% else %}
+            <ul class="navbar-nav mx-auto align-items-lg-center gap-lg-3 mt-3 mt-lg-0">
+              <li class="nav-item"><a class="nav-btn-premium" href="{{ url_for('landing') }}">
+                  <div class="nav-icon-container"><i class="bi bi-house-door"></i></div> <span>Home</span>
+                </a></li>
+              <li class="nav-item"><a class="nav-btn-premium" href="{{ url_for('landing') }}#features">
+                  <div class="nav-icon-container"><i class="bi bi-stars"></i></div> <span>Features</span>
+                </a></li>
+              <li class="nav-item"><a class="nav-btn-premium" href="{{ url_for('landing') }}#workflow">
+                  <div class="nav-icon-container"><i class="bi bi-arrow-repeat"></i></div> <span>How It Works</span>
+                </a></li>
+              <li class="nav-item"><a class="nav-btn-premium" href="{{ url_for('landing') }}#pricing">
+                  <div class="nav-icon-container"><i class="bi bi-gem"></i></div> <span>Pricing</span>
+                </a></li>
+              <li class="nav-item"><a class="nav-btn-premium" href="{{ url_for('landing') }}#testimonials">
+                  <div class="nav-icon-container"><i class="bi bi-chat-quote"></i></div> <span>Testimonials</span>
+                </a></li>
+            </ul>
+            <ul class="navbar-nav ms-auto align-items-lg-center gap-lg-3 mt-3 mt-lg-0">
+              <li class="nav-item ms-lg-2"><a class="nav-btn-premium active" href="{{ url_for('register') }}">
+                  <div class="nav-icon-container"><i class="bi bi-rocket"></i></div> <span>Get Started</span>
+                </a></li>
+            </ul>
+            {% endif %}
+          </div>
+        </div>
+      </nav>
+    </header>
+    {% endif %}
+
+    <main>
+      <div class="container-fluid px-0">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div class="flash-stack">
+          {% for category, message in messages %}
+          <div class="flash-message flash-{{ category }}">
+            <div class="flash-icon">
+              {% if category == 'success' %}
+              <i class="bi bi-check-circle-fill" style="color: #10B981;"></i>
+              {% elif category == 'danger' or category == 'error' %}
+              <i class="bi bi-x-circle-fill" style="color: #EF4444;"></i>
+              {% elif category == 'warning' %}
+              <i class="bi bi-exclamation-triangle-fill" style="color: #F59E0B;"></i>
+              {% else %}
+              <i class="bi bi-info-circle-fill" style="color: #2563EB;"></i>
+              {% endif %}
+            </div>
+            <div class="flash-content">{{ message }}</div>
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+        {% endwith %}
+      </div>
+      {% block content %}{% endblock %}
+    </main>
+
+    {% if page_type != 'auth' %}
+    <footer class="site-footer">
+      <div class="container-fluid px-0">
+        <div class="footer-card glass-card">
+          <div class="row g-4 align-items-center">
+            <div class="col-lg-6">
+              <div class="footer-brand">InterviewForge</div>
+              <p class="footer-copy">Adaptive interview practice designed to feel premium, focused, and built for modern
+                candidates.</p>
+            </div>
+            <div class="col-lg-6 text-lg-end">
+              <a class="footer-link" href="#features">Features</a>
+              <a class="footer-link" href="#workflow">Workflow</a>
+              <a class="footer-link" href="#pricing">Pricing</a>
             </div>
           </div>
         </div>
-      </footer>
-      {% endif %}
-    </div>
+      </div>
+    </footer>
+    {% endif %}
+  </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
-    {% block page_scripts %}{% endblock %}
-  </body>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+    integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+    crossorigin="anonymous"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const flashMessages = document.querySelectorAll(".flash-message");
+      flashMessages.forEach((msg) => {
+        setTimeout(() => {
+          msg.classList.add("dismissing");
+          setTimeout(() => {
+            msg.remove();
+          }, 300); // Wait for the 300ms slide-up & fade-out transition to finish
+        }, 3000); // 3 seconds visible duration
+      });
+
+    });
+  </script>
+  <script src="{{ url_for('static', filename='js/profile.js') }}"></script>
+  {% block page_scripts %}{% endblock %}
+</body>
+
 </html>

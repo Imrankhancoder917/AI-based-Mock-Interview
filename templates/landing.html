@@ -1,202 +1,445 @@
 {% extends "base.html" %}
 
 {% block page_styles %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/landing.css') }}" />
+<link rel="stylesheet" href="{{ url_for('static', filename='css/landing.css') }}?v=9" />
 {% endblock %}
 
 {% block content %}
-<section class="hero-section section-pad">
+<!-- ================= HERO SECTION ================= -->
+<section class="hero-section">
   <div class="container-fluid px-0">
     <div class="hero-grid">
+
+      <!-- Left Side -->
       <div class="hero-copy reveal-up">
-        <div class="eyebrow-chip">AI Adaptive Mock Interview Platform</div>
-        <h1>Practice interviews that adapt as fast as you do.</h1>
-        <p class="hero-lead">InterviewForge turns your resume into realistic, role-specific mock interviews with intelligent follow-ups, voice practice, and actionable feedback reports that help you improve with every session.</p>
-        <div class="hero-actions">
-          <a class="btn btn-primary btn-lg hero-btn-primary" href="#pricing">Start Free</a>
-          <a class="btn btn-outline-light btn-lg hero-btn-secondary" href="#features">Explore Features</a>
+
+        <div class="hero-top-badge">
+          <i class="bi bi-stars"></i>
+          <span>AI That Understands You</span>
         </div>
-        <div class="hero-metrics">
-          <div class="metric-card glass-card">
-            <strong>93%</strong>
-            <span>More relevant questions</span>
+
+        <h1 class="gradient-text-blue">
+          Prepare <span class="text-primary">Smarter.</span><br>
+          Interview <span class="gradient-text-purple">Better.</span>
+        </h1>
+
+        <p class="hero-lead">
+          InterviewForge uses AI to analyze your resume, match job roles, conduct realistic mock interviews and give
+          actionable feedback.
+        </p>
+
+        <div class="feature-badges-row">
+          <div class="badge-saas">
+            <i class="bi bi-file-earmark-text text-primary"></i> Resume-Aware
           </div>
-          <div class="metric-card glass-card">
-            <strong>2 min</strong>
-            <span>From resume upload to interview</span>
+          <div class="badge-saas">
+            <i class="bi bi-bullseye text-purple"></i> JD-Based
           </div>
-          <div class="metric-card glass-card">
-            <strong>Instant</strong>
-            <span>Feedback after every session</span>
+          <div class="badge-saas">
+            <i class="bi bi-robot text-success"></i> AI-Powered
+          </div>
+        </div>
+
+        <div class="hero-actions">
+          <a class="btn btn-primary-gradient btn-lg" href="{{ url_for('interview_room') }}">
+            <i class="bi bi-rocket-fill"></i> Start Mock Interview &rarr;
+          </a>
+          <a class="btn btn-secondary-light btn-lg" href="{{ url_for('upload') }}">
+            <i class="bi bi-cloud-upload"></i> Upload Resume
+          </a>
+        </div>
+      </div>
+
+      <!-- Right Side -->
+      <div class="hero-visual reveal-up delay-1">
+        <div class="hero-visual-premium">
+          <!-- Layer 1-4: Background Energy Environment -->
+          <div class="ref-bg-glows" data-depth="0.1">
+            <div class="glow-blue"></div>
+            <div class="glow-purple"></div>
+            <div class="glow-cyan"></div>
+            <div class="light-fog"></div>
+          </div>
+
+          <!-- Layer 5: Background Particle Field -->
+          <div class="ref-particles bg-particles" aria-hidden="true" data-depth="0.2">
+            <span class="dot d1"></span><span class="dot d2"></span><span class="dot d3"></span>
+            <span class="sparkle s1"></span><span class="sparkle s2"></span>
+          </div>
+
+          <!-- Layer 6: Energy Trails (Orbit Paths) -->
+          <div class="ref-energy-trails">
+            <div class="trail-inner"></div>
+            <div class="trail-middle"></div>
+            <div class="trail-outer"></div>
+          </div>
+
+          <!-- Holographic Platform -->
+          <div class="ref-holo-platform">
+            <div class="ring-glow"></div>
+            <div class="ring-outer-cw"></div>
+            <div class="ring-inner-ccw"></div>
+            <div class="ring-ripple"></div>
+            <div class="platform-core"></div>
+          </div>
+
+          <!-- Layer 7: Robot Container -->
+          <div class="ref-robot-container" data-depth="0.3">
+            <img src="{{ url_for('static', filename='img/newrobo.png') }}" class="ref-robot-img" alt="AI Interviewer" />
+          </div>
+
+          <!-- Layer 8: Orbiting Cards & Floating Icons -->
+          <div class="ref-orbit-system">
+            <!-- Inner Orbit -->
+            <div class="orbit-container inner-orbit">
+              <div class="ref-glass-card pos-top">
+                <div class="card-icon bg-blue"><i class="bi bi-file-earmark-text"></i></div>
+                <div class="card-text">
+                  <strong>Resume Score</strong>
+                  <span class="metric blue">92% <i class="bi bi-graph-up"></i></span>
+                </div>
+              </div>
+              <div class="ref-glass-card pos-bottom">
+                <div class="card-icon bg-cyan"><i class="bi bi-cpu"></i></div>
+                <div class="card-text">
+                  <strong>AI Feedback</strong>
+                  <span class="metric text-muted">Strong Points: 8/10</span>
+                </div>
+              </div>
+              <!-- Floating Icons on inner orbit -->
+              <div class="ref-floating-icon icon-pos-1"><i class="bi bi-person"></i></div>
+              <div class="ref-floating-icon icon-pos-2"><i class="bi bi-bullseye"></i></div>
+            </div>
+
+            <!-- Middle Orbit -->
+            <div class="orbit-container middle-orbit">
+              <div class="ref-glass-card pos-left">
+                <div class="card-icon bg-green"><i class="bi bi-check-circle"></i></div>
+                <div class="card-text">
+                  <strong>JD Match</strong>
+                  <span class="metric green">Excellent</span>
+                </div>
+              </div>
+              <div class="ref-glass-card pos-right">
+                <div class="card-icon bg-purple"><i class="bi bi-robot"></i></div>
+                <div class="card-text">
+                  <strong>Mock Interviews</strong>
+                  <span class="metric purple">23 <small>Completed</small></span>
+                </div>
+              </div>
+              <!-- Floating Icons on middle orbit -->
+              <div class="ref-floating-icon icon-pos-3"><i class="bi bi-bar-chart"></i></div>
+              <div class="ref-floating-icon icon-pos-4"><i class="bi bi-lightning"></i></div>
+            </div>
+
+            <!-- Outer Orbit -->
+            <div class="orbit-container outer-orbit">
+              <div class="ref-glass-card pos-bottom-left">
+                <div class="card-icon bg-teal"><i class="bi bi-shield-check"></i></div>
+                <div class="card-text">
+                  <strong>Interview Readiness</strong>
+                  <span class="metric teal">Very High <i class="bi bi-arrow-up-right"></i></span>
+                </div>
+              </div>
+              <div class="ref-glass-card pos-top-right">
+                <div class="card-icon bg-orange"><i class="bi bi-graph-up-arrow"></i></div>
+                <div class="card-text">
+                  <strong>Performance Report</strong>
+                  <span class="metric orange">Top 15%</span>
+                </div>
+              </div>
+              <div class="ref-glass-card pos-bottom-right">
+                <div class="card-icon bg-indigo"><i class="bi bi-bar-chart-steps"></i></div>
+                <div class="card-text">
+                  <strong>Skill Analysis</strong>
+                  <span class="metric indigo">Advanced</span>
+                </div>
+              </div>
+              <!-- Floating Icons on outer orbit -->
+              <div class="ref-floating-icon icon-pos-5"><i class="bi bi-image"></i></div>
+              <div class="ref-floating-icon icon-pos-6"><i class="bi bi-code-slash"></i></div>
+            </div>
+          </div>
+
+          <!-- Layer 9: Foreground Particles -->
+          <div class="ref-particles fg-particles" aria-hidden="true" data-depth="0.6">
+            <span class="glow-dust g1"></span><span class="glow-dust g2"></span>
+            <span class="energy-frag f1"></span>
           </div>
         </div>
       </div>
 
-      <div class="hero-visual reveal-up delay-1">
-        <div class="floating-card glass-card interview-card card-top-left">
-          <span class="card-label">Role match</span>
-          <h3>Senior Product Designer</h3>
-          <p>Behavioral, product thinking, and systems design prompts tailored to your background.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ================= LIVE STATS SECTION ================= -->
+<section class="stats-section">
+  <div class="container-fluid px-0">
+    <div class="stats-bar-wrapper reveal-up delay-2">
+      <div class="stat-item">
+        <div class="stat-icon bg-purple-light"><i class="bi bi-people-fill"></i></div>
+        <div class="stat-text">
+          <strong class="counter-anim" data-target="{{ user_count }}">0</strong>
+          <span>Active Users</span>
         </div>
-        <div class="floating-card glass-card interview-card card-center">
-          <div class="wave-bars" aria-hidden="true">
-            <span></span><span></span><span></span><span></span><span></span>
-          </div>
-          <h3>Voice interview mode</h3>
-          <p>Practice out loud with adaptive timing, follow-up logic, and confidence coaching.</p>
+      </div>
+      <div class="stat-item">
+        <div class="stat-icon bg-green-light"><i class="bi bi-check-circle-fill"></i></div>
+        <div class="stat-text">
+          <strong class="counter-anim" data-target="{{ interview_count }}">0</strong>
+          <span>Mock Interviews Taken</span>
         </div>
-        <div class="floating-card glass-card interview-card card-bottom-right">
-          <span class="card-label">Feedback report</span>
-          <div class="score-row">
-            <strong>84</strong>
-            <span>/100</span>
-          </div>
-          <p>Clarity, structure, and impact signals improved from the last session.</p>
+      </div>
+      <div class="stat-item">
+        <div class="stat-icon bg-orange-light"><i class="bi bi-file-earmark-text-fill"></i></div>
+        <div class="stat-text">
+          <strong class="counter-anim" data-target="{{ reports_count }}">0</strong>
+          <span>Reports Generated</span>
         </div>
-        <div class="orb orb-one"></div>
-        <div class="orb orb-two"></div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-icon bg-blue-light"><i class="bi bi-file-pdf-fill"></i></div>
+        <div class="stat-text">
+          <strong class="counter-anim" data-target="{{ resumes_count }}">0</strong>
+          <span>Resumes Analyzed</span>
+        </div>
       </div>
     </div>
   </div>
 </section>
 
-<section id="features" class="section-pad section-alt">
-  <div class="container-fluid px-0">
-    <div class="section-heading reveal-up">
-      <div class="eyebrow-chip">Features</div>
-      <h2>Built like a premium product, not a demo.</h2>
-      <p>Every part of the experience is designed for focused practice, polished visuals, and meaningful feedback loops.</p>
+<!-- ================= FEATURE SECTION ================= -->
+<section id="features" class="section-pad" style="padding-top: 2rem;">
+  <div class="container-fluid px-0 text-center">
+    <div class="section-heading mx-auto reveal-up mb-5">
+      <h2 class="text-dark fw-bold">Everything You Need for <span class="highlight">Interview Success</span></h2>
     </div>
 
-    <div class="row g-4 feature-grid">
+    <div class="row g-4 feature-grid text-start">
       <div class="col-md-6 col-xl-3 reveal-up">
-        <article class="feature-card glass-card h-100">
-          <div class="feature-icon">AI</div>
-          <h3>AI adaptive interviews</h3>
-          <p>Questions evolve based on your responses so each session feels realistic, challenging, and personalized.</p>
+        <article class="feature-card glass-card-light feature-hover">
+          <div class="feature-icon-wrapper fc-blue"><i class="bi bi-file-earmark-person-fill"></i></div>
+          <h3>Resume Analysis</h3>
+          <p>AI parses your resume and gives detailed insights on your background.</p>
         </article>
       </div>
       <div class="col-md-6 col-xl-3 reveal-up delay-1">
-        <article class="feature-card glass-card h-100">
-          <div class="feature-icon">VO</div>
-          <h3>Voice mock interviews</h3>
-          <p>Practice spoken answers in a calm, professional environment with smooth pacing and interview realism.</p>
+        <article class="feature-card glass-card-light feature-hover">
+          <div class="feature-icon-wrapper fc-green"><i class="bi bi-bullseye"></i></div>
+          <h3>JD Analysis</h3>
+          <p>Match your resume with job descriptions perfectly to target key requirements.</p>
         </article>
       </div>
       <div class="col-md-6 col-xl-3 reveal-up delay-2">
-        <article class="feature-card glass-card h-100">
-          <div class="feature-icon">CV</div>
-          <h3>Resume-based questioning</h3>
-          <p>Upload a resume and receive targeted prompts drawn from experience, skills, and career trajectory.</p>
+        <article class="feature-card glass-card-light feature-hover">
+          <div class="feature-icon-wrapper fc-purple"><i class="bi bi-robot"></i></div>
+          <h3>AI Mock Interview</h3>
+          <p>Real-time AI interviews dynamically based on your specific profile and role.</p>
         </article>
       </div>
       <div class="col-md-6 col-xl-3 reveal-up delay-3">
-        <article class="feature-card glass-card h-100">
-          <div class="feature-icon">FB</div>
-          <h3>Instant feedback reports</h3>
-          <p>See strengths, gaps, and improvement opportunities immediately after each interview session.</p>
+        <article class="feature-card glass-card-light feature-hover">
+          <div class="feature-icon-wrapper fc-orange"><i class="bi bi-soundwave"></i></div>
+          <h3>Voice Analysis</h3>
+          <p>Practice speaking aloud with real-time whisper transcription capabilities.</p>
+        </article>
+      </div>
+      <div class="col-md-6 col-xl-3 reveal-up">
+        <article class="feature-card glass-card-light feature-hover">
+          <div class="feature-icon-wrapper fc-pink"><i class="bi bi-stars"></i></div>
+          <h3>AI Feedback</h3>
+          <p>Get instant feedback with strengths, weaknesses, and structural suggestions.</p>
+        </article>
+      </div>
+      <div class="col-md-6 col-xl-3 reveal-up delay-1">
+        <article class="feature-card glass-card-light feature-hover">
+          <div class="feature-icon-wrapper fc-indigo"><i class="bi bi-file-earmark-bar-graph-fill"></i></div>
+          <h3>Performance Reports</h3>
+          <p>Download shareable reports with scores, analysis, and detailed roadmaps.</p>
+        </article>
+      </div>
+      <div class="col-md-6 col-xl-3 reveal-up delay-2">
+        <article class="feature-card glass-card-light feature-hover">
+          <div class="feature-icon-wrapper fc-teal"><i class="bi bi-grid-fill"></i></div>
+          <h3>Dashboard Analytics</h3>
+          <p>Track your progress, practice streaks, and recent scores over time.</p>
+        </article>
+      </div>
+      <div class="col-md-6 col-xl-3 reveal-up delay-3">
+        <article class="feature-card glass-card-light feature-hover">
+          <div class="feature-icon-wrapper fc-red"><i class="bi bi-shield-exclamation"></i></div>
+          <h3>Skill Gap Analysis</h3>
+          <p>Identify missing competencies before facing the real interview panel.</p>
         </article>
       </div>
     </div>
   </div>
 </section>
 
+<!-- ================= DASHBOARD PREVIEW SECTION ================= -->
+<section class="section-pad dashboard-preview-section">
+  <div class="container-fluid px-0 text-center">
+    <div class="section-heading mx-auto reveal-up">
+      <h2 class="text-dark fw-bold">A clear view of your progress.</h2>
+      <p class="text-muted">Track your interview scores, performance charts, and skill breakdowns.</p>
+    </div>
+    <div class="dashboard-mockup reveal-up delay-1">
+      <div class="mockup-header">
+        <div class="mockup-dots"><span></span><span></span><span></span></div>
+        <div class="mockup-title">InterviewForge Analytics Dashboard</div>
+      </div>
+      <div class="mockup-body row text-start">
+        <div class="col-md-4">
+          <div class="mockup-card mb-4">
+            <h5 class="fw-bold mb-4 text-dark">Interview Scores</h5>
+            <div class="score-circle">85<span>%</span></div>
+          </div>
+          <div class="mockup-card">
+            <h5 class="fw-bold mb-3 text-dark">AI Insights</h5>
+            <p class="small mb-0 text-muted">Great system design structures. Need to improve behavioral responses and
+              STAR method.</p>
+          </div>
+        </div>
+        <div class="col-md-8">
+          <div class="mockup-card h-100 d-flex flex-column">
+            <h5 class="fw-bold mb-4 text-dark">Performance Chart</h5>
+            <div class="chart-bars mt-auto">
+              <div class="bar" style="height: 40%"></div>
+              <div class="bar" style="height: 60%"></div>
+              <div class="bar" style="height: 55%"></div>
+              <div class="bar" style="height: 75%"></div>
+              <div class="bar" style="height: 68%"></div>
+              <div class="bar" style="height: 85%"></div>
+              <div class="bar" style="height: 92%"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= HOW IT WORKS ================= -->
 <section id="workflow" class="section-pad">
   <div class="container-fluid px-0">
-    <div class="section-heading reveal-up">
-      <div class="eyebrow-chip">Workflow</div>
-      <h2>A clear path from upload to improvement.</h2>
-      <p>Simple, structured, and fast. The flow keeps users moving from preparation to insight without friction.</p>
+    <div class="section-heading text-center mx-auto reveal-up">
+      <h2 class="text-dark fw-bold">How It Works</h2>
     </div>
 
-    <div class="workflow-panel glass-card reveal-up">
-      <div class="workflow-step">
-        <span class="workflow-index">01</span>
-        <div>
-          <h3>Upload resume</h3>
-          <p>Bring in your current resume and let InterviewForge infer skills, roles, and interview priorities.</p>
-        </div>
+    <div class="timeline-container reveal-up">
+      <div class="timeline-step">
+        <div class="step-num">1</div>
+        <h4>Create Account</h4>
+        <p class="text-muted small">Sign up in seconds.</p>
       </div>
-      <div class="workflow-arrow">→</div>
-      <div class="workflow-step">
-        <span class="workflow-index">02</span>
-        <div>
-          <h3>Start interview</h3>
-          <p>Launch a tailored mock interview session with adaptive questioning and role-aware prompts.</p>
-        </div>
+      <div class="timeline-step">
+        <div class="step-num">2</div>
+        <h4>Upload Resume</h4>
+        <p class="text-muted small">AI parses your background.</p>
       </div>
-      <div class="workflow-arrow">→</div>
-      <div class="workflow-step">
-        <span class="workflow-index">03</span>
-        <div>
-          <h3>Answer questions</h3>
-          <p>Practice concise, confident responses with follow-ups that react to your content in real time.</p>
-        </div>
+      <div class="timeline-step">
+        <div class="step-num">3</div>
+        <h4>Upload Job Description</h4>
+        <p class="text-muted small">Target specific roles.</p>
       </div>
-      <div class="workflow-arrow">→</div>
-      <div class="workflow-step">
-        <span class="workflow-index">04</span>
-        <div>
-          <h3>Get report</h3>
-          <p>Receive a polished feedback report that highlights strengths, clarity, and next steps.</p>
+      <div class="timeline-step">
+        <div class="step-num">4</div>
+        <h4>Take AI Mock Interview</h4>
+        <p class="text-muted small">Adaptive voice/text practice.</p>
+      </div>
+      <div class="timeline-step">
+        <div class="step-num">5</div>
+        <h4>Download Report</h4>
+        <p class="text-muted small">Actionable detailed feedback.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= TESTIMONIAL SECTION ================= -->
+<section id="testimonials" class="section-pad testimonials-section">
+  <div class="container-fluid px-0 overflow-hidden">
+    <div class="section-heading text-center mx-auto reveal-up">
+      <h2 class="text-dark fw-bold">Trusted by candidates.</h2>
+    </div>
+
+    <div class="scrolling-wrapper reveal-up delay-1">
+      <div class="scrolling-testimonials">
+        <div class="testimonial-card">
+          <p class="text-dark fs-5 fst-italic">"The adaptive follow-ups felt just like my Google onsite."</p>
+          <div class="mt-4 d-flex align-items-center gap-3">
+            <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center fw-bold"
+              style="width: 40px; height: 40px;">PS</div>
+            <div>
+              <strong class="d-block text-dark">Priya S.</strong>
+              <span class="text-muted small">Software Engineer</span>
+            </div>
+          </div>
+        </div>
+        <div class="testimonial-card">
+          <p class="text-dark fs-5 fst-italic">"Resume parsing found exactly the weak spots I needed to cover."</p>
+          <div class="mt-4 d-flex align-items-center gap-3">
+            <div class="bg-purple text-white rounded-circle d-flex align-items-center justify-content-center fw-bold"
+              style="width: 40px; height: 40px; background: #8b5cf6;">MT</div>
+            <div>
+              <strong class="d-block text-dark">Marcus T.</strong>
+              <span class="text-muted small">Product Manager</span>
+            </div>
+          </div>
+        </div>
+        <div class="testimonial-card">
+          <p class="text-dark fs-5 fst-italic">"The performance report gave me the confidence I was lacking."</p>
+          <div class="mt-4 d-flex align-items-center gap-3">
+            <div class="bg-success text-white rounded-circle d-flex align-items-center justify-content-center fw-bold"
+              style="width: 40px; height: 40px;">AR</div>
+            <div>
+              <strong class="d-block text-dark">Amina R.</strong>
+              <span class="text-muted small">Data Analyst</span>
+            </div>
+          </div>
+        </div>
+        <!-- Duplicates for seamless scrolling loop -->
+        <div class="testimonial-card">
+          <p class="text-dark fs-5 fst-italic">"The adaptive follow-ups felt just like my Google onsite."</p>
+          <div class="mt-4 d-flex align-items-center gap-3">
+            <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center fw-bold"
+              style="width: 40px; height: 40px;">PS</div>
+            <div>
+              <strong class="d-block text-dark">Priya S.</strong>
+              <span class="text-muted small">Software Engineer</span>
+            </div>
+          </div>
+        </div>
+        <div class="testimonial-card">
+          <p class="text-dark fs-5 fst-italic">"Resume parsing found exactly the weak spots I needed to cover."</p>
+          <div class="mt-4 d-flex align-items-center gap-3">
+            <div class="bg-purple text-white rounded-circle d-flex align-items-center justify-content-center fw-bold"
+              style="width: 40px; height: 40px; background: #8b5cf6;">MT</div>
+            <div>
+              <strong class="d-block text-dark">Marcus T.</strong>
+              <span class="text-muted small">Product Manager</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>
   </div>
 </section>
 
-<section id="testimonials" class="section-pad section-alt">
+<!-- ================= FINAL CTA SECTION ================= -->
+<section class="section-pad final-cta-section">
   <div class="container-fluid px-0">
-    <div class="section-heading reveal-up">
-      <div class="eyebrow-chip">Testimonials</div>
-      <h2>Mock praise from people who care about clarity.</h2>
-      <p>Social proof that feels aligned with a premium SaaS product: concise, polished, and credible.</p>
-    </div>
-
-    <div class="row g-4 testimonial-grid">
-      <div class="col-lg-4 reveal-up">
-        <article class="testimonial-card glass-card h-100">
-          <p>"The adaptive follow-ups feel close to a real hiring panel. It stopped me from memorizing answers and forced me to think."</p>
-          <div class="testimonial-meta">
-            <strong>Priya S.</strong>
-            <span>Product Manager</span>
-          </div>
-        </article>
-      </div>
-      <div class="col-lg-4 reveal-up delay-1">
-        <article class="testimonial-card glass-card h-100">
-          <p>"The resume-aware prompts are sharp. It immediately surfaced the parts of my background I usually gloss over."</p>
-          <div class="testimonial-meta">
-            <strong>Marcus T.</strong>
-            <span>Frontend Engineer</span>
-          </div>
-        </article>
-      </div>
-      <div class="col-lg-4 reveal-up delay-2">
-        <article class="testimonial-card glass-card h-100">
-          <p>"The feedback report is the part I keep coming back to. It tells me exactly what to tighten before my next interview."</p>
-          <div class="testimonial-meta">
-            <strong>Amina R.</strong>
-            <span>Data Analyst</span>
-          </div>
-        </article>
-      </div>
-    </div>
-  </div>
-</section>
-
-<section id="pricing" class="section-pad pricing-section">
-  <div class="container-fluid px-0">
-    <div class="pricing-card glass-card reveal-up">
-      <div class="pricing-copy">
-        <div class="eyebrow-chip">Pricing</div>
-        <h2>Start preparing like the interview already matters.</h2>
-        <p>Launch with a premium experience, then expand into full interview coaching as your product grows.</p>
-      </div>
-      <div class="pricing-cta">
-        <div class="price-tag">Free during module 1</div>
-        <a class="btn btn-primary btn-lg hero-btn-primary" href="/">Build your interview rhythm</a>
-        <span class="pricing-note">Modern UI, production-ready scaffold, and a route structure ready for future modules.</span>
+    <div class="cta-banner reveal-up text-center">
+      <h2 class="text-dark fw-bold mb-4" style="font-size: 3rem;">Ready To Ace Your Next Interview?</h2>
+      <div class="hero-actions justify-content-center m-0 mt-5">
+        <a class="btn btn-primary btn-lg fw-bold px-5 rounded-pill shadow"
+          href="{{ url_for('interview_room') }}">
+          <i class="bi bi-rocket-fill"></i> Start Mock Interview
+        </a>
+        <a class="btn btn-outline-primary btn-lg px-5 rounded-pill" href="{{ url_for('upload') }}">
+          <i class="bi bi-cloud-upload"></i> Upload Resume
+        </a>
       </div>
     </div>
   </div>

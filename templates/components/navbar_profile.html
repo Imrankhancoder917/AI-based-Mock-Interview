@@ -1,0 +1,71 @@
+{% set user_name = current_user.full_name if current_user.full_name else 'Candidate' %}
+{% set initials = (user_name.split()[0][:1] + user_name.split()[-1][:1]).upper() if user_name.split()|length > 1 else
+(user_name[:2].upper() if user_name else 'U') %}
+
+<div class="nav-user-profile position-relative d-flex align-items-center"
+  style="cursor: pointer; min-width: max-content; margin-left: 0; margin-right: 2rem;" id="topbarProfileTrigger">
+  {% if current_user.profile_image %}
+  <img src="{{ url_for('static', filename='profiles/' + current_user.profile_image) }}" id="globalAvatarImg"
+    class="nav-user-avatar" style="object-fit: cover;" alt="Profile">
+  <div id="globalAvatarDiv" class="nav-user-avatar" style="display: none;">{{ initials }}</div>
+  {% else %}
+  <img src="" id="globalAvatarImg" class="nav-user-avatar" style="display: none; object-fit: cover;" alt="Profile">
+  <div id="globalAvatarDiv" class="nav-user-avatar">{{ initials }}</div>
+  {% endif %}
+  <div class="nav-user-info text-start d-none d-lg-block ms-2">
+    <strong class="d-block profile-name-display text-truncate {% if is_dark_nav %}text-white{% endif %}"
+      style="font-size: 0.95rem; max-width: 140px; {% if not is_dark_nav %}color: var(--text-main);{% endif %}">{{
+      user_name }}</strong>
+  </div>
+
+  <!-- Global Profile Dropdown -->
+  <div id="profileDropdown" class="profile-dropdown shadow-lg rounded-3"
+    style="display: none; position: absolute; top: calc(100% + 10px); right: 0; min-width: 250px; background: white; z-index: 9999; border: 1px solid rgba(0,0,0,0.05); overflow: hidden;">
+    <!-- Mobile Info Header (visible only on mobile) -->
+    <div class="d-lg-none p-3 border-bottom text-center bg-light">
+      <strong class="d-block profile-name-display" style="color: var(--text-main); font-size: 1rem;">{{ user_name
+        }}</strong>
+    </div>
+    <ul class="list-unstyled mb-0 py-2">
+      <li>
+        <a href="#" class="d-flex align-items-center px-4 py-2 text-decoration-none profile-dropdown-item"
+          id="changePictureBtn" style="color: var(--text-main); transition: all 0.2s; font-size: 0.9rem;">
+          <i class="bi bi-camera me-3" style="font-size: 1.1rem; color: var(--primary-main);"></i>
+          <span>Change Picture</span>
+        </a>
+      </li>
+      <li>
+        <a href="#" class="d-flex align-items-center px-4 py-2 text-decoration-none profile-dropdown-item"
+          id="removePictureBtn" style="color: var(--text-main); transition: all 0.2s; font-size: 0.9rem;">
+          <i class="bi bi-trash me-3" style="font-size: 1.1rem; color: #EF4444;"></i>
+          <span>Remove Picture</span>
+        </a>
+      </li>
+      <li>
+        <hr class="dropdown-divider my-2 border-light">
+      </li>
+      <li>
+        <a href="{{ url_for('logout') }}"
+          class="d-flex align-items-center px-4 py-2 text-decoration-none text-danger profile-dropdown-item"
+          style="transition: all 0.2s; font-size: 0.9rem; font-weight: 500;">
+          <i class="bi bi-box-arrow-right me-3" style="font-size: 1.1rem;"></i>
+          <span>Sign Out</span>
+        </a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<input type="file" id="profileImageInput" style="display: none;" accept="image/png, image/jpeg, image/webp">
+
+<style>
+  .profile-dropdown-item:hover {
+    background: rgba(15, 23, 42, 0.03) !important;
+  }
+
+  .profile-dropdown-item.text-danger:hover {
+    background: rgba(239, 68, 68, 0.05) !important;
+  }
+</style>
+
+</style>

@@ -1,201 +1,593 @@
 {% extends "base.html" %}
 
 {% block page_styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard-premium.css') }}" />
 <link rel="stylesheet" href="{{ url_for('static', filename='css/interview.css') }}" />
 {% endblock %}
 
 {% block content %}
-<section class="interview-shell">
-  <div class="interview-grid">
-    <aside class="interview-sidebar glass-card">
-      <div class="sidebar-top">
-        <div class="brand-cluster">
-          <div class="brand-mark-mini">IF</div>
+<div class="dash-shell">
+  <!-- Sidebar (Same Sidebar structure as dashboard page) -->
+  <aside class="dash-sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-logo">IF</div>
+      <div class="brand-text">InterviewForge</div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <a href="{{ url_for('landing') }}"
+        class="nav-btn-premium {% if request.endpoint == 'landing' %}active{% endif %}">
+        <div class="nav-icon-container"><i class="bi bi-house-door"></i></div> <span>Home</span>
+      </a>
+      <a href="{{ url_for('dashboard') }}"
+        class="nav-btn-premium {% if request.endpoint == 'dashboard' %}active{% endif %}">
+        <div class="nav-icon-container"><i class="bi bi-grid"></i></div> <span>Dashboard</span>
+      </a>
+      <a href="{{ url_for('interview_room') }}"
+        class="nav-btn-premium {% if request.endpoint == 'interview_room' %}active{% endif %}">
+        <div class="nav-icon-container"><i class="bi bi-camera-video"></i></div> <span>Mock Interview</span>
+      </a>
+      <a href="{{ url_for('reports.latest_report') }}"
+        class="nav-btn-premium {% if request.endpoint == 'reports.latest_report' %}active{% endif %}">
+        <div class="nav-icon-container"><i class="bi bi-download"></i></div> <span>Download Report</span>
+      </a>
+      <a href="{{ url_for('upload') }}" class="nav-btn-premium {% if request.endpoint == 'upload' %}active{% endif %}">
+        <div class="nav-icon-container"><i class="bi bi-cloud-upload"></i></div> <span>Upload Resume</span>
+      </a>
+      <a href="{{ url_for('logout') }}" class="nav-btn-premium nav-btn-logout">
+        <div class="nav-icon-container"><i class="bi bi-box-arrow-right"></i></div> <span>Logout</span>
+      </a>
+    </nav>
+
+    <div class="sidebar-bottom">
+      <!-- AI Assistant Card inside Sidebar -->
+      <div class="sidebar-ai-card">
+        <div class="sidebar-ai-header">
+          <span class="online-dot"></span> Online
+        </div>
+        <img src="{{ url_for('static', filename='img/robot image.png') }}" class="sidebar-robot" alt="AI Assistant">
+        <h4>Need Help?</h4>
+        <p>I'm here to help you prepare for your interviews.</p>
+        <button class="nav-btn-premium" style="width: 100%; margin-top: 8px;">
+          <div class="nav-icon-container"><i class="bi bi-chat-dots"></i></div>
+          <span>Chat with AI</span>
+        </button>
+      </div>
+
+      <!-- User Profile inside Sidebar -->
+      {% include 'components/profile_card.html' %}
+    </div>
+  </aside>
+
+  <!-- Main Content panel -->
+  <main class="dash-main">
+    <!-- Top Bar Header -->
+    <header class="dash-topbar room-topbar">
+      <div class="topbar-left text-start">
+        <h1>Mock Interview</h1>
+        <p>Practice real interviews with our AI interviewer.</p>
+      </div>
+      <div class="topbar-right">
+        <!-- End Interview (Reset session) -->
+        <button id="resetSessionBtn" class="btn-end-interview"><i class="bi bi-square-fill"></i> End Interview</button>
+
+        <!-- Live Countdown Timer Widget -->
+        <div class="timer-widget">
+          <i class="bi bi-clock"></i>
+          <div class="timer-widget-text">
+            <span>Time Remaining</span>
+            <strong id="timerDisplay">16:24</strong>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <div class="interview-grid-premium">
+      <!-- Middle Interview Main column -->
+      <div class="interview-column-main">
+
+        <!-- Context Banner -->
+        <div class="alert mb-4 d-flex justify-content-between align-items-center"
+          style="background: rgba(139, 92, 246, 0.1); border-left: 4px solid #8B5CF6; border-radius: 8px;">
           <div>
-            <strong>AI Interviewer</strong>
-            <span>InterviewForge live room</span>
+            <h6 class="mb-1" style="color: #8B5CF6;"><i class="bi bi-info-circle me-2"></i> Interview Context</h6>
+            <div class="small text-muted">
+              <strong>Resume:</strong> {{ active_resume.profile_name if active_resume else 'None (Fallback to general)'
+              }}<br>
+              <strong>Job Description:</strong> {{ active_jd.title if active_jd else 'None (Fallback to general)' }}
+            </div>
+          </div>
+          <a href="{{ url_for('upload') }}" class="btn btn-sm btn-outline-primary"
+            style="border-color: #8B5CF6; color: #8B5CF6;">Change</a>
+        </div>
+
+        <!-- Info Cards Bar -->
+        <div class="info-bar-strip">
+          <div class="info-card">
+            <div class="info-card-icon role-icon"><i class="bi bi-code-slash"></i></div>
+            <div class="info-card-text">
+              <span>Role</span>
+              <strong id="sessionRole">{{ role_family | title if role_family else 'Full Stack Developer' }}</strong>
+            </div>
+          </div>
+          <div class="info-card">
+            <div class="info-card-icon diff-icon"><i class="bi bi-bar-chart-fill"></i></div>
+            <div class="info-card-text">
+              <span>Difficulty</span>
+              <strong id="difficultyBadge">Medium</strong>
+            </div>
+          </div>
+          <div class="info-card">
+            <div class="info-card-icon question-icon"><i class="bi bi-question-circle-fill"></i></div>
+            <div class="info-card-text">
+              <span>Question</span>
+              <strong id="progressLabel">Question 1 of 15</strong>
+            </div>
+          </div>
+          <div class="info-card">
+            <div class="info-card-icon type-icon"><i class="bi bi-mic-fill"></i></div>
+            <div class="info-card-text">
+              <span>Interview Type</span>
+              <strong>AI Voice Interview</strong>
+            </div>
           </div>
         </div>
-        <span class="live-pill">Live</span>
-      </div>
 
-      <div class="interviewer-avatar-wrap">
-        <div class="interviewer-orb"></div>
-        <div class="interviewer-face">AI</div>
-        <p id="interviewerStatus">Ready to challenge your thinking.</p>
-      </div>
+        <!-- Main Question Card -->
+        <article class="premium-card question-premium-card" id="questionCard">
+          <div class="question-header-row">
+            <div class="question-header-left">
+              <i class="bi bi-stars"></i>
+              <span>AI Interviewer</span>
+            </div>
+            <button class="btn-bookmark" title="Bookmark"><i class="bi bi-bookmark"></i></button>
+          </div>
 
-      <div class="sidebar-cards">
-        <article class="sidebar-mini glass-card">
-          <span>Role family</span>
-          <strong>{{ role_family | title }}</strong>
+          <h2 id="questionText">
+            {% if initial_question %}
+            {{ initial_question.prompt }}
+            {% else %}
+            <div class="interview-preview-info py-2">
+              <h3 class="mb-3" style="color: var(--text-main); font-weight: 600; font-size: 1.35rem;">Ready to Start
+                Your Adaptive Interview?</h3>
+              <div class="preview-card-box p-3 rounded mb-3"
+                style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); text-align: left;">
+                <h4 style="color: #8B5CF6; font-size: 1rem; margin-bottom: 1rem; font-weight: 600;"><i
+                    class="bi bi-info-circle-fill me-2"></i> Interview Based On:</h4>
+
+                <div class="mb-2">
+                  <span
+                    style="color: var(--text-muted); font-size: 0.85rem; display: block; margin-bottom: 0.15rem;">Active
+                    Resume</span>
+                  <strong style="color: var(--text-main); font-size: 0.95rem;"><i
+                      class="bi bi-file-earmark-person text-success me-2"></i> {{ active_resume.profile_name if
+                    active_resume else 'None (General Interview)' }}</strong>
+                </div>
+
+                <div>
+                  <span
+                    style="color: var(--text-muted); font-size: 0.85rem; display: block; margin-bottom: 0.15rem;">Active
+                    Job Description</span>
+                  <strong style="color: var(--text-main); font-size: 0.95rem;"><i
+                      class="bi bi-briefcase text-primary me-2"></i> {{ active_jd.title if active_jd else 'None (General
+                    Interview)' }}</strong>
+                </div>
+              </div>
+              <p class="text-muted small mb-0">Click <strong>Start Interview</strong> below to begin your custom
+                practice session.</p>
+            </div>
+            {% endif %}
+          </h2>
+
+          <div class="question-tag-row">
+            <span id="questionKind" class="tag-pill">{% if initial_question %}{{ initial_question.kind | title }}{% else
+              %}Setup Mode{% endif %}</span>
+          </div>
+
+          <div class="question-footer-row">
+            <i class="bi bi-lightbulb"></i>
+            <span id="questionHint">{% if initial_question %}Take a moment to think. You can speak or type your
+              answer.{% else %}Generate a personalized, real-world mock interview tailored to your target job
+              criteria.{% endif %}</span>
+          </div>
+
+          <!-- Hidden nodes maintained for backend script compatibility -->
+          <span id="questionDifficulty" style="display:none;"></span>
+          <span id="questionScore" style="display:none;"></span>
+          <div id="modifiedBadge" style="display:none; font-size: 0.8rem; letter-spacing: 0.02em;"
+            class="badge bg-warning text-dark mt-2 px-3 py-1 rounded-pill align-self-start"><i
+              class="bi bi-pencil-square me-1"></i> Modified After Evaluation</div>
         </article>
-        <article class="sidebar-mini glass-card">
-          <span>Resume context</span>
-          <strong>{{ 'Loaded' if has_resume else 'Missing' }}</strong>
-        </article>
-        <article class="sidebar-mini glass-card">
-          <span>JD context</span>
-          <strong>{{ 'Loaded' if has_jd else 'Missing' }}</strong>
-        </article>
-      </div>
 
-      <div class="sidebar-note glass-card">
-        <strong>Interview logic</strong>
-        <p>The engine pushes on tradeoffs, implementation details, and reasoning under pressure.</p>
-      </div>
-    </aside>
-
-    <main class="interview-main">
-      <header class="room-header glass-card">
-        <div>
-          <div class="eyebrow-chip">Protected interview room</div>
-          <h1>Speak, respond, and let the engine adapt in real time.</h1>
-          <p class="room-copy">A voice-first mock interview loop with live transcription, adaptive follow-ups, and audio playback.</p>
-        </div>
-
-        <div class="room-controls">
-          <div class="control-pill">
-            <span>Timer</span>
-            <strong id="timerDisplay">00:00</strong>
+        <!-- Answer / Input Panel -->
+        <article class="premium-card answer-premium-card">
+          <!-- Active Tab headers -->
+          <div class="answer-tabs">
+            <button class="tab-btn active" id="tabSpeak" type="button">Speak Answer</button>
+            <button class="tab-btn" id="tabType" type="button">Type Answer</button>
           </div>
-          <div class="control-pill">
-            <span>Difficulty</span>
-            <strong id="difficultyBadge">5 / 10</strong>
-          </div>
-          <button id="voiceModeToggle" class="toggle-pill" type="button" aria-pressed="true">Voice mode on</button>
-        </div>
-      </header>
 
-      <section class="progress-strip glass-card">
-        <div class="progress-meta">
-          <span>Session progress</span>
-          <strong id="progressLabel">0 / 8 rounds</strong>
-        </div>
-        <div class="progress-track"><div id="progressFill" class="progress-fill"></div></div>
-      </section>
-
-      <section id="questionCard" class="question-card glass-card">
-        <div class="question-topline">
-          <div>
-            <span id="questionKind" class="question-kind">Waiting</span>
-            <h2 id="questionText">Start the interview to receive a challenging first question.</h2>
-          </div>
-          <div class="question-badge-stack">
-            <span id="questionDifficulty" class="difficulty-badge">D5</span>
-            <span id="questionScore" class="score-badge">Ready</span>
-          </div>
-        </div>
-        <p id="questionHint" class="question-hint">Your interviewer will focus on tradeoffs, outcomes, and the reasoning behind your choices.</p>
-
-        <div class="question-actions">
-          <button id="startQuestionBtn" class="primary-action" type="button">Start interview</button>
-          <button id="speakQuestionBtn" class="secondary-action" type="button">Speak question</button>
-          <button id="generateFollowUpBtn" class="secondary-action" type="button">Next question</button>
-        </div>
-      </section>
-
-      <section class="voice-console glass-card">
-        <div class="voice-console-top">
-          <div class="mic-cluster">
-            <button id="micButton" class="mic-button" type="button" aria-label="Record answer">
-              <span class="mic-ring"></span>
-              <span class="mic-core">Mic</span>
-            </button>
-            <div class="voice-state">
-              <strong id="audioStatus">Idle</strong>
-              <span id="audioSubStatus">Press the mic to record a spoken answer.</span>
+          <!-- AI Thinking Experience Overlay -->
+          <div class="thinking-overlay" id="thinkingOverlay" style="display: none;">
+            <div class="thinking-loader">
+              <div class="typing-dots large">
+                <span></span><span></span><span></span>
+              </div>
+              <strong id="thinkingStateText">Analyzing your answer...</strong>
+              <p>Please wait while the AI evaluator measures technical and communication signals.</p>
             </div>
           </div>
 
-          <div id="waveform" class="waveform" aria-hidden="true">
-            <span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+          <!-- Tab Viewport: Speak Answer -->
+          <div class="tab-content" id="contentSpeak">
+            <div class="waveform-console">
+
+              <!-- Waveform visualization bars -->
+              <div class="waveform-container" id="waveform">
+                <span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+                <span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+                <span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+                <span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+              </div>
+
+              <!-- Round Mic button -->
+              <button id="micButton" class="premium-mic-btn" type="button" aria-label="Record answer">
+                <span class="mic-glow-ring"></span>
+                <i class="bi bi-mic-fill"></i>
+              </button>
+
+              <div class="voice-status-block">
+                <strong id="audioStatus">Listening...</strong>
+                <span id="audioSubStatus">Speak clearly into your microphone</span>
+              </div>
+            </div>
+
+            <!-- Speak Actions row -->
+            <div class="voice-action-buttons">
+              <button id="startQuestionBtn" class="btn-primary-gradient" type="button">Start interview</button>
+              <button id="speakQuestionBtn" class="btn-secondary-outline" type="button" style="display:none;">Speak
+                question</button>
+              <button id="transcribeBtn" class="btn-stop-record" type="button" style="display:none;"><i
+                  class="bi bi-square-fill"></i> Stop Recording</button>
+              <button id="submitAnswerBtn" class="btn-primary-gradient" type="button" disabled><i
+                  class="bi bi-send-fill"></i> Submit Answer</button>
+            </div>
           </div>
-        </div>
 
-        <div class="answer-composer">
-          <label for="answerInput">Your response</label>
-          <textarea id="answerInput" rows="6" placeholder="Answer like you are speaking to a real interviewer: lead with the decision, explain the tradeoff, and close with the outcome."></textarea>
-          <div class="answer-actions">
-            <button id="transcribeBtn" class="secondary-action" type="button">Record and transcribe</button>
-            <button id="submitAnswerBtn" class="primary-action" type="button">Submit answer</button>
-            <button id="clearAnswerBtn" class="ghost-action" type="button">Clear</button>
+          <!-- Tab Viewport: Type Answer (Hidden by default) -->
+          <div class="tab-content" id="contentType" style="display: none;">
+            <div class="text-answer-composer">
+              <textarea id="answerInput" rows="5"
+                placeholder="Answer like you are speaking to a real interviewer: lead with the decision, explain the tradeoff, and close with the outcome."></textarea>
+              <div class="text-action-buttons">
+                <button id="clearAnswerBtn" class="btn-secondary-outline" type="button">Clear</button>
+                <button id="submitAnswerBtnText" class="btn-primary-gradient" type="button" disabled><i
+                    class="bi bi-send-fill"></i> Submit Answer</button>
+              </div>
+            </div>
           </div>
-        </div>
-      </section>
+        </article>
 
-      <section class="transcript-card glass-card">
-        <div class="section-head">
-          <div>
-            <h3>Transcript and feedback</h3>
-            <p>Every turn is saved here with the score, feedback, and follow-up question.</p>
+        <!-- Bottom navigation strip -->
+        <div class="bottom-navigation-bar">
+          <button id="prevQuestionBtn" class="btn-secondary-outline" type="button" disabled><i
+              class="bi bi-chevron-left"></i> Previous Question</button>
+          <!-- generateFollowUpBtn is hidden, kept for backward compatibility if needed -->
+          <button id="generateFollowUpBtn" class="btn-secondary-outline" type="button" style="display:none;">Skip
+            Question <i class="bi bi-chevron-right"></i></button>
+
+          <button id="nextQuestionBtn" class="btn-primary-gradient" type="button">Next Question <i
+              class="bi bi-chevron-right"></i></button>
+          <button id="finishInterviewBtn" class="btn-success" type="button"
+            style="display:none; padding: 0.65rem 1.5rem; border-radius: 12px; border: none; font-weight: 600;">Finish
+            Interview <i class="bi bi-check2-circle"></i></button>
+        </div>
+
+        <!-- Hidden nodes loaded for compatibility -->
+        <div id="transcriptList" style="display:none;"></div>
+      </div>
+
+      <!-- Right Column Panel -->
+      <div class="interview-column-right">
+        <!-- AI Interviewer Card -->
+        <article class="premium-card right-panel-card interviewer-glow-card">
+          <div class="panel-card-header">
+            <h3>AI Interviewer</h3>
+            <span class="online-dot-pill"><span class="pulse-green"></span> Online</span>
           </div>
-          <button id="resetSessionBtn" class="ghost-action small" type="button">Reset session</button>
-        </div>
-        <div id="transcriptList" class="transcript-list"></div>
-      </section>
-    </main>
 
-    <aside class="interview-insights">
-      <section class="insight-card glass-card">
-        <div class="section-head compact">
-          <h3>Live interviewer</h3>
-          <span>Adaptive</span>
-        </div>
-        <p class="insight-copy">Expect follow-ups that challenge assumptions, ask for metrics, and force precise reasoning.</p>
-        <div id="nextQuestionPreview" class="preview-box">
-          <span>Next question preview</span>
-          <strong>Generate a question to reveal the next challenge.</strong>
-        </div>
-      </section>
+          <!-- Halo animated robot avatar container -->
+          <div class="avatar-halo-container">
+            <div class="interviewer-halo"></div>
+            <img src="{{ url_for('static', filename='img/robot image.png') }}" class="interviewer-robot-avatar"
+              alt="AI Interviewer">
+          </div>
 
-      <section class="insight-card glass-card">
-        <div class="section-head compact">
-          <h3>Session health</h3>
-          <span>Realtime</span>
-        </div>
-        <div class="metric-grid">
-          <div class="metric-pill"><span>Round</span><strong id="roundMetric">0</strong></div>
-          <div class="metric-pill"><span>Score</span><strong id="scoreMetric">-</strong></div>
-          <div class="metric-pill"><span>Voice</span><strong id="voiceMetric">Off</strong></div>
-          <div class="metric-pill"><span>State</span><strong id="sessionMetric">Idle</strong></div>
-        </div>
-      </section>
+          <!-- Dynamic Status -->
+          <div class="dynamic-interviewer-status">
+            <span id="interviewerStatus">I'm listening to your answer</span>
+            <div class="status-bouncing-dots">
+              <span></span><span></span><span></span>
+            </div>
+          </div>
+        </article>
 
-      <section class="insight-card glass-card">
-        <div class="section-head compact">
-          <h3>Coach notes</h3>
-          <span>Signals</span>
-        </div>
-        <ul id="coachNotes" class="coach-notes">
-          <li>Lead with the decision.</li>
-          <li>Explain the tradeoff.</li>
-          <li>Close with the measurable outcome.</li>
-        </ul>
-      </section>
-    </aside>
+        <!-- Progress Steps Card -->
+        <article class="premium-card right-panel-card">
+          <h3>Interview Progress</h3>
+          <div class="progress-sub-header">
+            <div class="progress-bar-container">
+              <div class="progress-bar-fill" id="progressFill" style="width: 30%;"></div>
+            </div>
+            <span class="progress-percentage-label" id="progressPctLabel">30% Completed</span>
+          </div>
+
+          <div class="progress-steps-list">
+            <div class="step-item checked" id="step-intro">
+              <i class="bi bi-check-circle-fill"></i>
+              <div class="step-details">
+                <span>Introduction</span>
+                <small>2:30 min</small>
+              </div>
+            </div>
+            <div class="step-item checked" id="step-solving">
+              <i class="bi bi-check-circle-fill"></i>
+              <div class="step-details">
+                <span>Problem Solving</span>
+                <small>4:15 min</small>
+              </div>
+            </div>
+            <div class="step-item active" id="step-design">
+              <i class="bi bi-3-circle-fill"></i>
+              <div class="step-details">
+                <span>System Design</span>
+                <span class="current-badge">Current</span>
+              </div>
+            </div>
+            <div class="step-item" id="step-behavioral">
+              <i class="bi bi-circle"></i>
+              <div class="step-details">
+                <span>Behavioral Questions</span>
+              </div>
+            </div>
+            <div class="step-item" id="step-coding">
+              <i class="bi bi-circle"></i>
+              <div class="step-details">
+                <span>Coding Question</span>
+              </div>
+            </div>
+            <div class="step-item" id="step-wrap">
+              <i class="bi bi-circle"></i>
+              <div class="step-details">
+                <span>Wrap Up</span>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <!-- Tips Card -->
+        <article class="premium-card right-panel-card">
+          <div class="panel-card-header no-border">
+            <div class="tips-title">
+              <i class="bi bi-lightbulb-fill text-warning"></i>
+              <h3>Interview Tips</h3>
+            </div>
+          </div>
+          <ul class="tips-checked-list">
+            <li>Take your time to think</li>
+            <li>Structure your answer clearly</li>
+            <li>Give real examples</li>
+            <li>It's okay to pause and think</li>
+          </ul>
+
+          <!-- Compatibility preview holders -->
+          <div id="nextQuestionPreview" style="display:none;"><strong></strong></div>
+          <ul id="coachNotes" style="display:none;"></ul>
+          <button id="voiceModeToggle" style="display:none;"></button>
+          <strong id="roundMetric" style="display:none;">0</strong>
+          <strong id="scoreMetric" style="display:none;">-</strong>
+          <strong id="voiceMetric" style="display:none;">Off</strong>
+          <strong id="sessionMetric" style="display:none;">Idle</strong>
+        </article>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<!-- AI Assistant Floating Chat Widget (reloaded globally inside dash-shell) -->
+<div class="floating-chat-widget" id="chatWidget" style="display: none;">
+  <div class="chat-header">
+    <div class="chat-title">
+      <span class="online-dot-small"></span>
+      <span>InterviewForge Assistant</span>
+    </div>
+    <div class="chat-controls">
+      <i class="bi bi-dash-lg" id="chatMinimize" title="Minimize"></i>
+      <i class="bi bi-fullscreen" id="chatMaximize" title="Maximize"></i>
+      <i class="bi bi-x-lg" id="chatClose" title="Close"></i>
+    </div>
   </div>
-</section>
+  <div class="chat-body-wrapper">
+    <div class="chat-body" id="chatBody">
+      <!-- Welcomes and dynamic messages will be rendered by JS -->
+    </div>
+    <div class="chat-input-area">
+      <input type="text" id="chatInput" placeholder="Ask a question..." />
+      <button class="chat-send-btn" id="chatSend"><i class="bi bi-send"></i></button>
+    </div>
+  </div>
+</div>
 
 <script>
-  window.__INTERVIEW_BOOTSTRAP__ = {{ {
-    'initialQuestion': initial_question,
-    'interviewState': interview_state,
-    'userName': user_name,
-    'roleFamily': role_family,
-    'hasResume': has_resume,
-    'hasJD': has_jd,
-    'endpoints': {
-      'generateQuestion': url_for('api_generate_question'),
-      'processAnswer': url_for('api_process_answer'),
-      'transcribe': url_for('api_speech_transcribe'),
-      'respond': url_for('api_speech_respond'),
+  window.__INTERVIEW_BOOTSTRAP__ = {{
+    {
+      'initialQuestion': initial_question,
+        'interviewState': interview_state,
+          'userName': user_name,
+            'roleFamily': role_family,
+              'hasResume': has_resume,
+                'hasJD': has_jd,
+                  'endpoints': {
+        'generateQuestion': url_for('api_generate_question'),
+          'processAnswer': url_for('api_process_answer'),
+            'transcribe': url_for('api_speech_transcribe'),
+              'respond': url_for('api_speech_respond'),
     }
-  } | tojson }};
+    } | tojson
+  }};
 </script>
 {% endblock %}
 
 {% block page_scripts %}
 <script src="{{ url_for('static', filename='js/interview_audio_handler.js') }}"></script>
 <script src="{{ url_for('static', filename='js/interview_ui.js') }}"></script>
+<script src="{{ url_for('static', filename='js/dashboard-premium.js') }}"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    // --- 1. Tab Toggling (Speak vs Type Answer) ---
+    const tabSpeak = document.getElementById("tabSpeak");
+    const tabType = document.getElementById("tabType");
+    const contentSpeak = document.getElementById("contentSpeak");
+    const contentType = document.getElementById("contentType");
+
+    if (tabSpeak && tabType && contentSpeak && contentType) {
+      tabSpeak.addEventListener("click", () => {
+        tabSpeak.classList.add("active");
+        tabType.classList.remove("active");
+        contentSpeak.style.display = "block";
+        contentType.style.display = "none";
+      });
+
+      tabType.addEventListener("click", () => {
+        tabType.classList.add("active");
+        tabSpeak.classList.remove("active");
+        contentSpeak.style.display = "none";
+        contentType.style.display = "block";
+      });
+    }
+
+
+
+    // --- 3. AI Evaluation Bouncing Thinking Overlay Observer ---
+    const thinkingOverlay = document.getElementById("thinkingOverlay");
+    const thinkingStateText = document.getElementById("thinkingStateText");
+    const actualSubmitBtn = document.getElementById("submitAnswerBtn");
+
+    if (thinkingOverlay && thinkingStateText && actualSubmitBtn) {
+      let thinkingTimer = null;
+      const states = [
+        "Analyzing your answer...",
+        "Evaluating communication signals...",
+        "Measuring technical tradeoffs...",
+        "Generating adaptive follow-up question..."
+      ];
+
+      const submitObserver = new MutationObserver(() => {
+        if (actualSubmitBtn.disabled) {
+          // Show overlay and cycle status strings
+          thinkingOverlay.style.display = "flex";
+          let index = 0;
+          thinkingStateText.innerText = states[0];
+
+          if (thinkingTimer) clearInterval(thinkingTimer);
+          thinkingTimer = setInterval(() => {
+            index = (index + 1) % states.length;
+            thinkingStateText.innerText = states[index];
+          }, 2000);
+        } else {
+          // Hide overlay
+          thinkingOverlay.style.display = "none";
+          if (thinkingTimer) {
+            clearInterval(thinkingTimer);
+            thinkingTimer = null;
+          }
+        }
+      });
+
+      submitObserver.observe(actualSubmitBtn, { attributes: true, attributeFilter: ["disabled"] });
+    }
+
+    // --- 4. Dynamic Waveform class observer when recording is active ---
+    const micButton = document.getElementById("micButton");
+    const waveform = document.getElementById("waveform");
+    const audioStatus = document.getElementById("audioStatus");
+    const transcribeBtn = document.getElementById("transcribeBtn");
+
+    if (micButton && waveform && audioStatus) {
+      const statusObserver = new MutationObserver(() => {
+        const text = audioStatus.textContent.toLowerCase();
+        if (text.includes("recording") || text.includes("listening")) {
+          waveform.classList.add("active");
+          if (transcribeBtn) transcribeBtn.style.display = "inline-flex";
+        } else {
+          waveform.classList.remove("active");
+          if (transcribeBtn) transcribeBtn.style.display = "none";
+        }
+      });
+      statusObserver.observe(audioStatus, { characterData: true, childList: true, subtree: true });
+    }
+
+    // --- 5. Navigation Sidebar Active Tag Syncing ---
+    const mockNav = document.querySelector('.sidebar-nav a[href*="interview-room"]');
+    if (mockNav) {
+      document.querySelectorAll('.sidebar-nav a').forEach(a => a.classList.remove('active'));
+      mockNav.classList.add('active');
+    }
+
+    // --- 6. Sync and format vertical progress steps dynamically ---
+    const progressFill = document.getElementById("progressFill");
+    const progressPctLabel = document.getElementById("progressPctLabel");
+
+    if (progressFill && progressPctLabel) {
+      const progressObserver = new MutationObserver(() => {
+        const width = progressFill.style.width;
+        progressPctLabel.textContent = `${width || '0%'} Completed`;
+
+        // Sync vertical list checks based on round counts
+        const percentVal = parseInt(width) || 0;
+
+        const steps = [
+          { id: "step-intro", min: 10, selector: "i" },
+          { id: "step-solving", min: 30, selector: "i" },
+          { id: "step-design", min: 50, selector: "i" },
+          { id: "step-behavioral", min: 70, selector: "i" },
+          { id: "step-coding", min: 85, selector: "i" },
+          { id: "step-wrap", min: 99, selector: "i" }
+        ];
+
+        steps.forEach((step, idx) => {
+          const el = document.getElementById(step.id);
+          if (!el) return;
+
+          el.classList.remove("checked", "active");
+          const icon = el.querySelector("i");
+
+          if (percentVal >= step.min) {
+            el.classList.add("checked");
+            if (icon) icon.className = "bi bi-check-circle-fill";
+          } else if (percentVal < step.min && (idx === 0 || percentVal >= steps[idx - 1].min)) {
+            el.classList.add("active");
+            if (icon) icon.className = `bi bi-${idx + 1}-circle-fill`;
+
+            // Add a clean current indicator badge
+            let badge = el.querySelector(".current-badge");
+            if (!badge) {
+              badge = document.createElement("span");
+              badge.className = "current-badge";
+              badge.textContent = "Current";
+              el.querySelector(".step-details").appendChild(badge);
+            }
+          } else {
+            if (icon) icon.className = "bi bi-circle";
+            const badge = el.querySelector(".current-badge");
+            if (badge) badge.remove();
+          }
+        });
+      });
+
+      progressObserver.observe(progressFill, { attributes: true, attributeFilter: ["style"] });
+    }
+  });
+</script>
 {% endblock %}

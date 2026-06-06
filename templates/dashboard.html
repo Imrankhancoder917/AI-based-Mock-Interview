@@ -1,176 +1,594 @@
 {% extends "base.html" %}
 
 {% block page_styles %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}" />
+<link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard-premium.css') }}" />
 {% endblock %}
 
 {% block content %}
-<section class="dashboard-shell">
-  <div class="dashboard-layout">
-    <aside class="dashboard-sidebar glass-card">
-      <div class="sidebar-brand">
-        <div class="brand-icon">IF</div>
-        <div>
-          <strong>InterviewForge</strong>
-          <span>Adaptive interview suite</span>
+<div class="dash-shell">
+  <!-- Sidebar -->
+  <aside class="dash-sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-logo">IF</div>
+      <div class="brand-text">InterviewForge</div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <a href="{{ url_for('landing') }}"
+        class="nav-btn-premium {% if request.endpoint == 'landing' %}active{% endif %}">
+        <div class="nav-icon-container"><i class="bi bi-house-door"></i></div> <span>Home</span>
+      </a>
+      <a href="{{ url_for('dashboard') }}"
+        class="nav-btn-premium {% if request.endpoint == 'dashboard' %}active{% endif %}">
+        <div class="nav-icon-container"><i class="bi bi-grid"></i></div> <span>Dashboard</span>
+      </a>
+      <a href="{{ url_for('interview_room') }}"
+        class="nav-btn-premium {% if request.endpoint == 'interview_room' %}active{% endif %}">
+        <div class="nav-icon-container"><i class="bi bi-camera-video"></i></div> <span>Mock Interview</span>
+      </a>
+      <a href="{{ url_for('reports.latest_report') }}"
+        class="nav-btn-premium {% if request.endpoint == 'reports.latest_report' %}active{% endif %}">
+        <div class="nav-icon-container"><i class="bi bi-download"></i></div> <span>Download Report</span>
+      </a>
+      <a href="{{ url_for('upload') }}" class="nav-btn-premium {% if request.endpoint == 'upload' %}active{% endif %}">
+        <div class="nav-icon-container"><i class="bi bi-cloud-upload"></i></div> <span>Upload Resume</span>
+      </a>
+      <a href="{{ url_for('logout') }}" class="nav-btn-premium nav-btn-logout">
+        <div class="nav-icon-container"><i class="bi bi-box-arrow-right"></i></div> <span>Logout</span>
+      </a>
+    </nav>
+
+    <div class="sidebar-bottom">
+      <!-- AI Assistant Card inside Sidebar -->
+      <div class="sidebar-ai-card">
+        <div class="sidebar-ai-header">
+          <span class="online-dot"></span> Online
         </div>
+        <img src="{{ url_for('static', filename='img/robot image.png') }}" class="sidebar-robot" alt="AI Assistant">
+        <h4>Need Help?</h4>
+        <p>I'm here to help you prepare for your interviews.</p>
+        <button class="nav-btn-premium" style="width: 100%; margin-top: 8px;">
+          <div class="nav-icon-container"><i class="bi bi-chat-dots"></i></div>
+          <span>Chat with AI</span>
+        </button>
       </div>
 
-      <nav class="sidebar-nav">
-        <a class="sidebar-link active" href="{{ url_for('dashboard') }}"><span>⌂</span>Overview</a>
-        <a class="sidebar-link" href="#sessions"><span>◌</span>Sessions</a>
-        <a class="sidebar-link" href="#uploads"><span>⇪</span>Uploads</a>
-        <a class="sidebar-link" href="#analytics"><span>↗</span>Analytics</a>
-        <a class="sidebar-link" href="{{ url_for('logout') }}"><span>⎋</span>Logout</a>
-      </nav>
+      <!-- User Profile inside Sidebar -->
+      {% include 'components/profile_card.html' %}
+    </div>
+  </aside>
 
-      <div class="sidebar-card glass-card">
-        <p>Next session</p>
-        <strong>Senior Product Designer</strong>
-        <span>Ready in 12 minutes</span>
-        <a class="dash-btn secondary sidebar-action" href="{{ url_for('interview_room') }}">Start interview</a>
+  <!-- Main Content -->
+  <main class="dash-main">
+    <!-- Top Bar -->
+    <header class="dash-topbar">
+      <div class="topbar-left">
+        <h1>Welcome back, {{ user_name.split()[0] if user_name else 'Candidate' }}! 👋</h1>
+        <p>Let's continue your journey to success.</p>
       </div>
-    </aside>
+      <div class="topbar-right">
+        <div class="streak-badge"><i class="bi bi-fire" style="color: #EF4444;"></i> <strong>7</strong> Day Streak</div>
+        <div class="topbar-icon" id="notificationBell">
+          <i class="bi bi-bell"></i>
+          <span class="badge" id="notificationBadge" style="display: none;">0</span>
 
-    <div class="dashboard-main">
-      <header class="dashboard-topbar glass-card">
-        <div>
-          <p class="topbar-kicker">Protected dashboard</p>
-          <h1>Welcome back, {{ user_name.split()[0] }}.</h1>
-          <p>Track your progress, upload materials, and launch the next adaptive interview session.</p>
+          <!-- Notification Dropdown -->
+          <div class="notification-dropdown" id="notificationDropdown">
+            <div class="dropdown-header">
+              <h3>Notifications</h3>
+              <div class="dropdown-actions">
+                <button id="markAllRead" class="btn-text">Mark as read</button>
+                <button id="clearAllNotifications" class="btn-text">Clear all</button>
+              </div>
+            </div>
+            <div class="dropdown-body" id="notificationList">
+              <!-- Items loaded dynamically -->
+            </div>
+          </div>
         </div>
 
-        <div class="profile-pill">
-          <div class="profile-avatar">{{ user_name[:1] | upper }}</div>
-          <div>
-            <strong>{{ user_name }}</strong>
-            <span>Premium workspace</span>
-          </div>
-        </div>
-      </header>
+      </div>
+    </header>
 
-      <section class="dashboard-banner glass-card reveal-up visible">
-        <div>
-          <div class="eyebrow-chip">Reports</div>
-          <h2>Export your interview feedback as a polished analytics report.</h2>
-          <p>Generate a final report with scores, strengths, weaknesses, roadmap, and a printable PDF.</p>
-        </div>
-        <a class="dash-btn primary" href="{{ url_for('reports.latest_report') }}">View report</a>
-      </section>
+    <div class="dash-content">
+      <!-- Stats Grid (4 Cards) -->
+      <section class="stats-grid">
+        <article class="premium-card stat-card">
+          <div class="stat-top">
+            <div class="stat-icon" style="background: rgba(37,99,235,0.1); color: #2563EB;"><i
+                class="bi bi-calendar4-week"></i></div>
+            <div class="stat-meta">
+              <span class="stat-label">Mock Interviews</span>
+              <div class="stat-value counter">{{ interview_count }}</div>
+              {% if interview_count > 0 %}
+              <span class="stat-change text-muted">Total completed</span>
+              {% endif %}
+            </div>
+          </div>
+        </article>
 
-      <section class="dashboard-hero glass-card reveal-up visible">
-        <div class="hero-copy">
-          <div class="eyebrow-chip">Overview</div>
-          <h2>Your interview pipeline is active and improving.</h2>
-          <p>Everything is organized for fast iteration: upload, practice, review, and improve with clear signals.</p>
-          <div class="hero-actions">
-            <a class="dash-btn primary" href="#uploads">Upload resume</a>
-            <a class="dash-btn secondary" href="#sessions">Start interview</a>
+        <article class="premium-card stat-card">
+          <div class="stat-top">
+            <div class="stat-icon" style="background: rgba(16,185,129,0.1); color: #10B981;"><i
+                class="bi bi-check-circle"></i></div>
+            <div class="stat-meta">
+              <span class="stat-label">Avg. Score</span>
+              <div class="stat-value counter">{% if interview_count > 0 %}{{ avg_score }}%{% else %}N/A{% endif %}</div>
+            </div>
           </div>
-        </div>
-        <div class="hero-ring">
-          <div class="ring-core">
-            <strong>84</strong>
-            <span>Interview score</span>
-          </div>
-        </div>
-      </section>
+        </article>
 
-      <section class="stats-grid" aria-label="Dashboard stats">
-        {% for stat in dashboard_stats %}
-        <article class="stat-card glass-card reveal-up visible">
-          <span>{{ stat.label }}</span>
-          <strong>{{ stat.value }}</strong>
-          <p>{{ stat.change }}</p>
+        <article class="premium-card stat-card">
+          <div class="stat-top">
+            <div class="stat-icon" style="background: rgba(37,99,235,0.1); color: #2563EB;"><i class="bi bi-trophy"></i>
+            </div>
+            <div class="stat-meta">
+              <span class="stat-label">Strengths</span>
+              <div class="stat-value counter">{{ strengths_count }}</div>
+            </div>
+          </div>
         </article>
-        {% endfor %}
-      </section>
 
-      <section id="uploads" class="action-grid">
-        <article class="action-card glass-card reveal-up visible">
-          <div>
-            <p class="action-kicker">Upload resume</p>
-            <h3>Bring in the latest version of your profile.</h3>
-          </div>
-          <a class="action-btn" href="{{ url_for('upload') }}">Choose file</a>
-        </article>
-        <article class="action-card glass-card reveal-up visible">
-          <div>
-            <p class="action-kicker">Upload JD</p>
-            <h3>Match against the job description you want.</h3>
-          </div>
-          <a class="action-btn" href="{{ url_for('upload') }}">Choose file</a>
-        </article>
-        <article class="action-card glass-card reveal-up visible">
-          <div>
-            <p class="action-kicker">Start interview</p>
-            <h3>Begin a tailored mock interview in one click.</h3>
-          </div>
-          <a class="action-btn highlighted" href="{{ url_for('interview_room') }}">Start session</a>
-        </article>
-      </section>
-
-      <section id="analytics" class="analytics-grid">
-        <article class="chart-card glass-card reveal-up visible">
-          <div class="section-head">
-            <h3>Performance trend</h3>
-            <span>Last 7 sessions</span>
-          </div>
-          <div class="chart-bars" data-chart="trend" aria-label="Performance trend chart"></div>
-        </article>
-        <article class="chart-card glass-card reveal-up visible">
-          <div class="section-head">
-            <h3>Feedback focus</h3>
-            <span>Clarity, structure, confidence</span>
-          </div>
-          <div class="donut-chart" data-chart="focus" aria-label="Feedback focus chart">
-            <div class="donut-center">
-              <strong>72%</strong>
-              <span>Action rate</span>
+        <article class="premium-card stat-card">
+          <div class="stat-top">
+            <div class="stat-icon" style="background: rgba(245,158,11,0.1); color: #F59E0B;"><i
+                class="bi bi-bullseye"></i></div>
+            <div class="stat-meta">
+              <span class="stat-label">Areas to Improve</span>
+              <div class="stat-value counter">{{ weaknesses_count }}</div>
             </div>
           </div>
         </article>
       </section>
 
-      <section id="sessions" class="sessions-card glass-card reveal-up visible">
-        <div class="section-head">
-          <div>
-            <h3>Recent interview sessions</h3>
-            <p>Review the latest practice runs and session outcomes.</p>
+      <!-- Middle Grid: Performance Chart & Recent Activity -->
+      <section class="middle-grid">
+        <!-- Chart Section -->
+        <article class="premium-card performance-section">
+          <div class="chart-header">
+            <h3>Performance Overview</h3>
+            <select class="custom-select">
+              <option>Last 7 Days</option>
+            </select>
           </div>
-          <a class="table-link" href="{{ url_for('dashboard') }}">View full history</a>
+          <div class="chart-container d-flex flex-column align-items-center justify-content-center text-center">
+            {% if chart_data %}
+            <canvas id="performanceChart"></canvas>
+            {% else %}
+            <div class="empty-chart-state" style="opacity: 0.8;">
+              <i class="bi bi-bar-chart-fill"
+                style="font-size: 3rem; color: var(--text-muted); margin-bottom: 0.5rem; display: block;"></i>
+              <p class="text-muted fw-medium">Complete interviews to see performance analytics.</p>
+            </div>
+            {% endif %}
+          </div>
+          <div class="chart-bottom-stats">
+            <div class="bottom-stat">
+              <span>Interviews Taken</span>
+              <strong>{{ interview_count }}</strong>
+            </div>
+            <div class="bottom-stat">
+              <span>Average Score</span>
+              <strong>{% if interview_count > 0 %}{{ avg_score }}%{% else %}N/A{% endif %}</strong>
+            </div>
+            <div class="bottom-stat">
+              <span>Best Score</span>
+              <strong class="text-success">{% if interview_count > 0 %}{{ best_score }}%{% else %}N/A{% endif
+                %}</strong>
+            </div>
+            <div class="bottom-stat">
+              <span>Total Practice Time</span>
+              <strong>{{ practice_time_str }}</strong>
+            </div>
+          </div>
+        </article>
+
+        <!-- Recent Activity -->
+        <article class="premium-card activity-section">
+          <div class="chart-header">
+            <h3>Recent Activity</h3>
+          </div>
+          <div class="activity-feed">
+            {% if activities %}
+            {% for act in activities %}
+            <div class="activity-item">
+              <div class="activity-icon {{ act.icon_class }}"><i class="{{ act.icon }}"></i></div>
+              <div class="activity-details">
+                <strong>{{ act.title }}</strong>
+                <span>{{ act.detail }}</span>
+              </div>
+              {% if act.score %}
+              <div class="activity-score" style="color: #10B981; background: rgba(16,185,129,0.1);">{{ act.score }}
+              </div>
+              {% endif %}
+              <div class="activity-time" style="font-size: 0.75rem; white-space: nowrap;">{{ act.time_str }}</div>
+            </div>
+            {% endfor %}
+            {% else %}
+            <div
+              class="activity-item d-flex flex-column align-items-center justify-content-center text-center w-100 py-4"
+              style="opacity: 0.8;">
+              <i class="bi bi-clock-history"
+                style="font-size: 2.5rem; color: var(--text-muted); margin-bottom: 0.75rem;"></i>
+              <p class="text-muted fw-medium mb-0">No activity yet.</p>
+            </div>
+            {% endif %}
+          </div>
+        </article>
+      </section>
+
+      <!-- Bottom Grid (3 Columns) -->
+      <section class="bottom-3-grid">
+        <!-- Upcoming Interview -->
+        <article class="premium-card upcoming-card">
+          <div class="chart-header">
+            <h3>Upcoming Interview</h3>
+          </div>
+          {% if upcoming_interview %}
+          <div class="upcoming-content">
+            <div class="date-block">
+              <div class="date-month">{{ upcoming_interview.month }}</div>
+              <div class="date-day">{{ upcoming_interview.day }}</div>
+              <div class="date-weekday">{{ upcoming_interview.weekday }}</div>
+            </div>
+            <div class="upcoming-details">
+              <strong>{{ upcoming_interview.role }}</strong>
+              <span class="company-name"><i class="bi bi-building"></i> {{ upcoming_interview.company }}</span>
+              <div class="time-meta">
+                <span><i class="bi bi-clock"></i> {{ upcoming_interview.time }}</span>
+                <span><i class="bi bi-hourglass-split"></i> {{ upcoming_interview.duration }} mins</span>
+                <span><i class="bi bi-laptop"></i> {{ upcoming_interview.type }}</span>
+              </div>
+            </div>
+          </div>
+          <a href="{{ url_for('interview_room') }}" class="btn-primary-gradient full-width mt-3">Start Preparation</a>
+          {% else %}
+          <div
+            class="upcoming-content d-flex flex-column align-items-center justify-content-center text-center py-4 w-100"
+            style="opacity: 0.8;">
+            <i class="bi bi-calendar-x"
+              style="font-size: 2.5rem; color: var(--text-muted); margin-bottom: 0.75rem;"></i>
+            <p class="text-muted fw-medium mb-0">No upcoming interviews scheduled.</p>
+          </div>
+          {% endif %}
+        </article>
+
+        <!-- Top Skills -->
+        <article class="premium-card top-skills-card">
+          <h3>Top Skills</h3>
+          {% if skills_data %}
+          <div class="skills-content d-flex flex-wrap gap-2 pt-3">
+            {% for skill in skills_data %}
+            <span class="badge"
+              style="background: rgba(37, 99, 235, 0.1); color: #2563EB; font-size: 0.85rem; padding: 0.5rem 0.75rem;">{{
+              skill }}</span>
+            {% endfor %}
+          </div>
+          {% else %}
+          <div
+            class="skills-content d-flex flex-column align-items-center justify-content-center text-center py-4 w-100"
+            style="opacity: 0.8;">
+            <i class="bi bi-file-earmark-code"
+              style="font-size: 2.5rem; color: var(--text-muted); margin-bottom: 0.75rem;"></i>
+            <p class="text-muted fw-medium mb-0">Upload your resume to view skill insights.</p>
+          </div>
+          {% endif %}
+        </article>
+
+        <!-- Quick Actions -->
+        <article class="premium-card quick-actions-list">
+          <h3>Quick Actions</h3>
+          <div class="actions-stack">
+            <a href="{{ url_for('interview_room') }}" class="action-item">
+              <i class="bi bi-calendar-event text-primary"></i> Start Mock Interview <i
+                class="bi bi-chevron-right ms-auto"></i>
+            </a>
+            <a href="{{ url_for('upload') }}" class="action-item">
+              <i class="bi bi-file-earmark-text text-primary"></i> AI Resume Review <i
+                class="bi bi-chevron-right ms-auto"></i>
+            </a>
+            <a href="#practice" class="action-item">
+              <i class="bi bi-journal-code text-success"></i> Practice Questions <i
+                class="bi bi-chevron-right ms-auto"></i>
+            </a>
+            <a href="#analytics" class="action-item">
+              <i class="bi bi-bar-chart-fill text-warning"></i> View Analytics <i
+                class="bi bi-chevron-right ms-auto"></i>
+            </a>
+            {% if latest_report %}
+            <a href="{{ url_for('reports.latest_report') }}" class="action-item action-download">
+              <i class="bi bi-download text-purple"></i> Download Report <i class="bi bi-chevron-right ms-auto"></i>
+            </a>
+            {% else %}
+            <div class="action-item action-download" style="opacity: 0.6; cursor: not-allowed;"
+              title="Complete your first interview to generate reports">
+              <i class="bi bi-download text-muted"></i> Generate your first interview report <i
+                class="bi bi-chevron-right ms-auto"></i>
+            </div>
+            {% endif %}
+          </div>
+        </article>
+      </section>
+
+      <!-- ===== Resume ↔ JD Skill Match Widget ===== -->
+      <section class="premium-card skill-match-widget" style="margin-bottom: 1.5rem; padding: 1.5rem;">
+        <div
+          style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 0.5rem;">
+          <h3 style="margin: 0; font-size: 1.05rem; font-weight: 700; display: flex; align-items: center; gap: 0.5rem;">
+            <span
+              style="background: linear-gradient(135deg, #2563EB, #8B5CF6); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+              <i class="bi bi-diagram-3-fill" style="-webkit-text-fill-color: #2563EB;"></i>
+            </span>
+            Resume ↔ JD Skill Match
+          </h3>
+          <a href="{{ url_for('upload') }}"
+            style="font-size: 0.8rem; color: #2563EB; text-decoration: none; font-weight: 600;">View Full Analysis →</a>
         </div>
 
-        <div class="table-responsive">
-          <table class="sessions-table">
-            <thead>
-              <tr>
-                <th>Role</th>
-                <th>Mode</th>
-                <th>Score</th>
-                <th>Status</th>
-                <th>Time</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for session in recent_sessions %}
-              <tr>
-                <td>{{ session.role }}</td>
-                <td>{{ session.mode }}</td>
-                <td><span class="score-pill">{{ session.score }}</span></td>
-                <td><span class="status-pill {{ 'warn' if session.status == 'Needs review' else 'done' }}">{{ session.status }}</span></td>
-                <td>{{ session.time }}</td>
-              </tr>
-              {% endfor %}
-            </tbody>
-          </table>
+        {% if not skill_match.has_resume and not skill_match.has_jd %}
+        <!-- Neither uploaded -->
+        <div style="text-align: center; padding: 2rem 1rem; opacity: 0.75;">
+          <i class="bi bi-cloud-upload"
+            style="font-size: 2.5rem; color: var(--text-muted); display: block; margin-bottom: 0.5rem;"></i>
+          <p class="text-muted fw-medium mb-1">Upload a Resume and Job Description</p>
+          <p class="text-muted" style="font-size: 0.85rem;">to unlock skill matching insights.</p>
+          <a href="{{ url_for('upload') }}" class="btn-primary-gradient btn-sm"
+            style="margin-top: 0.5rem; display: inline-block;">Upload Now</a>
         </div>
+
+        {% elif not skill_match.has_jd %}
+        <!-- Resume but no JD -->
+        <div style="text-align: center; padding: 2rem 1rem; opacity: 0.75;">
+          <i class="bi bi-briefcase"
+            style="font-size: 2.5rem; color: var(--text-muted); display: block; margin-bottom: 0.5rem;"></i>
+          <p class="text-muted fw-medium mb-1">Upload a Job Description to view skill matching.</p>
+          <a href="{{ url_for('upload') }}" class="btn-primary-gradient btn-sm"
+            style="margin-top: 0.5rem; display: inline-block;">Upload JD</a>
+        </div>
+
+        {% elif not skill_match.has_resume %}
+        <!-- JD but no resume -->
+        <div style="text-align: center; padding: 2rem 1rem; opacity: 0.75;">
+          <i class="bi bi-file-earmark-person"
+            style="font-size: 2.5rem; color: var(--text-muted); display: block; margin-bottom: 0.5rem;"></i>
+          <p class="text-muted fw-medium mb-1">Upload a Resume to view skill matching.</p>
+          <a href="{{ url_for('upload') }}" class="btn-primary-gradient btn-sm"
+            style="margin-top: 0.5rem; display: inline-block;">Upload Resume</a>
+        </div>
+
+        {% else %}
+        <!-- Full match data available -->
+        <div style="display: grid; grid-template-columns: auto 1fr; gap: 1.5rem; align-items: center;">
+
+          <!-- Circular progress gauge -->
+          <div style="position: relative; width: 110px; height: 110px; flex-shrink: 0;">
+            <svg viewBox="0 0 36 36" style="width: 110px; height: 110px; transform: rotate(-90deg);">
+              <circle cx="18" cy="18" r="15.9" fill="none" stroke="rgba(37,99,235,0.08)" stroke-width="3" />
+              <circle cx="18" cy="18" r="15.9" fill="none"
+                stroke="{% if skill_match.match_pct >= 70 %}#10B981{% elif skill_match.match_pct >= 40 %}#F59E0B{% else %}#EF4444{% endif %}"
+                stroke-width="3" stroke-linecap="round" stroke-dasharray="{{ skill_match.match_pct }}, 100" />
+            </svg>
+            <div
+              style="position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;">
+              <span
+                style="font-size: 1.3rem; font-weight: 800; line-height: 1;
+                  color: {% if skill_match.match_pct >= 70 %}#10B981{% elif skill_match.match_pct >= 40 %}#F59E0B{% else %}#EF4444{% endif %};">
+                {{ skill_match.match_pct }}%
+              </span>
+              <span
+                style="font-size: 0.65rem; color: var(--text-muted); font-weight: 600; margin-top: 0.1rem;">Match</span>
+            </div>
+          </div>
+
+          <!-- Stats + badge pills -->
+          <div>
+            <!-- Stat counters row -->
+            <div style="display: flex; gap: 1.25rem; margin-bottom: 1rem; flex-wrap: wrap;">
+              <div style="text-align: center;">
+                <div style="font-size: 1.35rem; font-weight: 800; color: #0F172A; line-height: 1;">{{
+                  skill_match.resume_total }}</div>
+                <div
+                  style="font-size: 0.7rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em;">
+                  Resume Skills</div>
+              </div>
+              <div style="width: 1px; background: #E2E8F0;"></div>
+              <div style="text-align: center;">
+                <div style="font-size: 1.35rem; font-weight: 800; color: #0F172A; line-height: 1;">{{
+                  skill_match.jd_total }}</div>
+                <div
+                  style="font-size: 0.7rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em;">
+                  JD Skills</div>
+              </div>
+              <div style="width: 1px; background: #E2E8F0;"></div>
+              <div style="text-align: center;">
+                <div style="font-size: 1.35rem; font-weight: 800; color: #10B981; line-height: 1;">{{
+                  skill_match.matched | length }}</div>
+                <div
+                  style="font-size: 0.7rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em;">
+                  Matched</div>
+              </div>
+              <div style="width: 1px; background: #E2E8F0;"></div>
+              <div style="text-align: center;">
+                <div style="font-size: 1.35rem; font-weight: 800; color: #EF4444; line-height: 1;">{{
+                  skill_match.missing | length }}</div>
+                <div
+                  style="font-size: 0.7rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em;">
+                  Missing</div>
+              </div>
+            </div>
+
+            <!-- Top matched pills (up to 5) with toggle -->
+            {% if skill_match.matched %}
+            <div style="margin-bottom: 0.5rem;">
+              <div style="display: flex; flex-wrap: wrap; gap: 0.4rem;" id="matchedSkillsPreview">
+                {% for skill in skill_match.matched[:5] %}
+                <span
+                  style="background: rgba(16,185,129,0.1); color: #059669; border: 1px solid rgba(16,185,129,0.25); border-radius: 99px; padding: 0.2rem 0.65rem; font-size: 0.75rem; font-weight: 600; display: inline-flex; align-items: center; gap: 0.25rem;">
+                  <i class="bi bi-check-lg"></i> {{ skill }}
+                </span>
+                {% endfor %}
+                {% if skill_match.matched | length > 5 %}
+                <button
+                  onclick="document.getElementById('matchedSkillsFull').style.display='flex'; this.style.display='none'; document.getElementById('matchedSkillsPreview').style.display='none';"
+                  class="btn btn-sm btn-link text-decoration-none"
+                  style="font-size: 0.75rem; padding: 0; margin-left: 0.25rem; font-weight: 600; color: #2563EB;">+{{
+                  skill_match.matched | length - 5 }} More (View All Matched Skills)</button>
+                {% endif %}
+              </div>
+
+              {% if skill_match.matched | length > 5 %}
+              <div style="display: none; flex-wrap: wrap; gap: 0.4rem; animation: fadeIn 0.3s ease-in-out;"
+                id="matchedSkillsFull">
+                {% for skill in skill_match.matched %}
+                <span
+                  style="background: rgba(16,185,129,0.1); color: #059669; border: 1px solid rgba(16,185,129,0.25); border-radius: 99px; padding: 0.2rem 0.65rem; font-size: 0.75rem; font-weight: 600; display: inline-flex; align-items: center; gap: 0.25rem;">
+                  <i class="bi bi-check-lg"></i> {{ skill }}
+                </span>
+                {% endfor %}
+                <button
+                  onclick="document.getElementById('matchedSkillsFull').style.display='none'; document.getElementById('matchedSkillsPreview').style.display='flex'; document.getElementById('matchedSkillsPreview').querySelector('button').style.display='inline-block';"
+                  class="btn btn-sm btn-link text-decoration-none text-muted"
+                  style="font-size: 0.75rem; padding: 0; margin-left: 0.25rem; font-weight: 600;">Collapse</button>
+              </div>
+              {% endif %}
+            </div>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- Missing skills (up to 5) with toggle -->
+        {% if skill_match.missing %}
+        <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #F1F5F9;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+            <span
+              style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em;">
+              <i class="bi bi-exclamation-triangle-fill" style="color: #EF4444;"></i> Skill Gaps ({{ skill_match.missing
+              | length }})
+            </span>
+          </div>
+
+          <div style="display: flex; flex-wrap: wrap; gap: 0.4rem;" id="missingSkillsPreview">
+            {% for skill in skill_match.missing[:5] %}
+            <span
+              style="background: rgba(239,68,68,0.08); color: #DC2626; border: 1px solid rgba(239,68,68,0.2); border-radius: 99px; padding: 0.2rem 0.65rem; font-size: 0.75rem; font-weight: 600;">
+              {{ skill }}
+            </span>
+            {% endfor %}
+            {% if skill_match.missing | length > 5 %}
+            <button
+              onclick="document.getElementById('missingSkillsFull').style.display='flex'; this.style.display='none'; document.getElementById('missingSkillsPreview').style.display='none';"
+              class="btn btn-sm btn-link text-decoration-none"
+              style="font-size: 0.75rem; padding: 0; margin-left: 0.25rem; font-weight: 600; color: #2563EB;">+{{
+              skill_match.missing | length - 5 }} More (View All Missing Skills)</button>
+            {% endif %}
+          </div>
+
+          {% if skill_match.missing | length > 5 %}
+          <div style="display: none; flex-wrap: wrap; gap: 0.4rem; animation: fadeIn 0.3s ease-in-out;"
+            id="missingSkillsFull">
+            {% for skill in skill_match.missing %}
+            <span
+              style="background: rgba(239,68,68,0.08); color: #DC2626; border: 1px solid rgba(239,68,68,0.2); border-radius: 99px; padding: 0.2rem 0.65rem; font-size: 0.75rem; font-weight: 600;">
+              {{ skill }}
+            </span>
+            {% endfor %}
+            <button
+              onclick="document.getElementById('missingSkillsFull').style.display='none'; document.getElementById('missingSkillsPreview').style.display='flex'; document.getElementById('missingSkillsPreview').querySelector('button').style.display='inline-block';"
+              class="btn btn-sm btn-link text-decoration-none text-muted"
+              style="font-size: 0.75rem; padding: 0; margin-left: 0.25rem; font-weight: 600;">Collapse</button>
+          </div>
+          {% endif %}
+        </div>
+        {% endif %}
+
+        {% endif %}
+      </section>
+
+      <!-- AI Coach Card (Horizontal) -->
+      <section class="ai-coach-banner premium-card">
+        <div class="coach-banner-left">
+          <div class="coach-banner-visual">
+            <img src="{{ url_for('static', filename='img/robot image.png') }}" class="coach-robot-img"
+              alt="AI Coach Robot">
+          </div>
+          <div class="coach-banner-text">
+            <h3>AI Interview Coach</h3>
+            <p>Get personalized insights and recommendations to improve your interview skills.</p>
+            {% if latest_report %}
+            <a href="{{ url_for('reports.latest_report') }}" class="btn-primary-gradient btn-sm">Get AI Insights
+              &rarr;</a>
+            {% endif %}
+          </div>
+        </div>
+        {% if coach_recommendations %}
+        <div class="coach-banner-right">
+          <div class="coach-insight-col border-right">
+            <span>Recommended</span>
+            <strong>{{ coach_recommendations.recommended }}</strong>
+            <small>Based on your recent performance</small>
+          </div>
+          <div class="coach-insight-col border-right">
+            <span>Focus Area</span>
+            <strong>{{ coach_recommendations.focus_area }}</strong>
+            <small>Improve problem solving skills</small>
+          </div>
+          <div class="coach-insight-col">
+            <span>Next Goal</span>
+            <strong>{{ coach_recommendations.next_goal }}</strong>
+            <small>Rehearse targeted key skills</small>
+            <i class="bi bi-bullseye insight-target-icon"></i>
+          </div>
+        </div>
+        {% else %}
+        <div class="coach-banner-right d-flex align-items-center justify-content-center text-center p-4"
+          style="flex: 1; min-height: 120px; background: #F8FAFC;">
+          <div style="opacity: 0.8;">
+            <i class="bi bi-emoji-smile"
+              style="font-size: 2rem; color: var(--text-muted); display: block; margin-bottom: 0.25rem;"></i>
+            <p class="text-muted fw-medium mb-0">Complete your first interview to unlock AI insights.</p>
+          </div>
+        </div>
+        {% endif %}
       </section>
     </div>
+  </main>
+</div>
+
+<!-- Floating Chat Widget -->
+<div class="floating-chat-widget" id="chatWidget" style="display: none;">
+  <div class="chat-header">
+    <div class="chat-title">
+      <span class="online-dot-small"></span>
+      <span>InterviewForge Assistant</span>
+    </div>
+    <div class="chat-controls">
+      <i class="bi bi-dash-lg" id="chatMinimize" title="Minimize"></i>
+      <i class="bi bi-fullscreen" id="chatMaximize" title="Maximize"></i>
+      <i class="bi bi-x-lg" id="chatClose" title="Close"></i>
+    </div>
   </div>
-</section>
+  <div class="chat-body-wrapper">
+    <div class="chat-body" id="chatBody">
+      <!-- Welcomes and dynamic messages will be rendered by JS -->
+    </div>
+    <div class="chat-input-area">
+      <input type="text" id="chatInput" placeholder="Ask a question..." />
+      <button class="chat-send-btn" id="chatSend"><i class="bi bi-send"></i></button>
+    </div>
+  </div>
+</div>
 {% endblock %}
 
 {% block page_scripts %}
-<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+<script>
+  window.__DASHBOARD_BOOTSTRAP__ = {{
+    {
+      'notifications': notifications,
+        'chartData': chart_data,
+          'chartLabels': chart_labels
+    } | tojson
+  }};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="{{ url_for('static', filename='js/dashboard-premium.js') }}"></script>
 {% endblock %}

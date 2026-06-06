@@ -1,35 +1,101 @@
 {% extends "base.html" %}
 
 {% block page_styles %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/register.css') }}" />
+<link rel="stylesheet" href="{{ url_for('static', filename='css/auth-premium.css') }}" />
 {% endblock %}
 
 {% block content %}
 <section class="auth-shell">
   <div class="auth-layout reveal-up visible">
     <div class="auth-grid">
-      <div class="auth-visual register-visual">
-        <div class="eyebrow-chip auth-kicker">Create account</div>
-        <h1>Build an interview routine that feels personal.</h1>
-        <p>Start with a fresh account to unlock resume-aware interviews, role-based prompts, and instant scoring that tracks improvement over time.</p>
-        <ul class="auth-points">
-          <li><span>1</span> Personalize every session from your background</li>
-          <li><span>2</span> Practice voice, behavioral, and technical prompts</li>
-          <li><span>3</span> Generate feedback reports in a premium dashboard flow</li>
-        </ul>
+      <div class="auth-visual-premium">
+        <!-- Ambient Background Glow -->
+        <div class="auth-ambient-glow"></div>
 
-        <div class="glass-card auth-float auth-float-one register-float-one">
-          <strong>Adaptive depth</strong>
-          <p>Interviews expand when your answers show confidence.</p>
+        <!-- Floating Particles -->
+        <div class="auth-particles" aria-hidden="true">
+          <span class="particle p-1"></span>
+          <span class="particle p-2"></span>
+          <span class="particle p-3"></span>
+          <span class="particle p-4"></span>
         </div>
-        <div class="glass-card auth-float auth-float-two register-float-two">
-          <strong>Report quality</strong>
-          <p>Every session ends with specific improvement notes.</p>
+
+        <!-- Top Text Content -->
+        <div class="auth-left-top">
+          <h1 class="auth-left-headline">
+            Your AI Co-pilot for<br>
+            <span class="text-gradient">Smarter Interviews</span>
+          </h1>
+        </div>
+
+        <!-- Robot Assistant -->
+        <div class="hologram-stage-auth">
+          <div class="hologram-platform-auth"></div>
+          <img src="{{ url_for('static', filename='img/newrobo.png') }}" class="robot-assistant-img-auth"
+            id="register-robot" alt="AI Interviewer" />
+          <div class="hologram-beam-auth"></div>
+
+          <!-- Speech Bubble -->
+          <div class="robot-speech-bubble" id="robot-speech">
+            <div class="voice-waveform speaking" id="voice-waveform">
+              <span></span><span></span><span></span><span></span>
+            </div>
+            <span id="robot-speech-text">Welcome to InterviewForge. Let's create your AI interview workspace.</span>
+          </div>
+        </div>
+
+        <!-- Static Floating Status Cards -->
+        <div class="auth-status-card card-top-left">
+          <div class="auth-status-icon" style="background: rgba(37, 99, 235, 0.1);">
+            <i class="bi bi-file-earmark-text-fill text-primary" style="font-size: 1rem;"></i>
+          </div>
+          <div>
+            <strong>Resume Analysis</strong>
+            <span class="status-desc">Complete</span>
+          </div>
+        </div>
+
+        <div class="auth-status-card card-top-right">
+          <div class="auth-status-icon" style="background: rgba(139, 92, 246, 0.1);">
+            <i class="bi bi-check-circle-fill text-success" style="font-size: 1rem;"></i>
+          </div>
+          <div>
+            <strong>Interview Ready</strong>
+            <span class="status-desc">System Online</span>
+          </div>
+        </div>
+
+        <div class="auth-status-card card-bottom-left">
+          <div class="auth-status-icon" style="background: rgba(6, 182, 212, 0.1);">
+            <i class="bi bi-cpu-fill" style="font-size: 1rem; color: #06B6D4;"></i>
+          </div>
+          <div>
+            <strong>AI Confidence</strong>
+            <span class="status-desc">94% Target</span>
+          </div>
+        </div>
+
+        <div class="auth-status-card card-bottom-right">
+          <div class="auth-status-icon" style="background: rgba(245, 158, 11, 0.1);">
+            <i class="bi bi-mic-fill text-warning" style="font-size: 1rem;"></i>
+          </div>
+          <div>
+            <strong>Voice Assistant</strong>
+            <span class="status-desc">Active</span>
+          </div>
+        </div>
+
+        <!-- Bottom Feature Strip -->
+        <div class="auth-feature-strip">
+          <div class="feature-pill"><i class="bi bi-shield-check"></i> Secure & Private</div>
+          <div class="feature-pill"><i class="bi bi-cpu-fill"></i> AI-Powered</div>
+          <div class="feature-pill"><i class="bi bi-bar-chart-fill"></i> Detailed Insights</div>
+          <div class="feature-pill"><i class="bi bi-star-fill"></i> Trusted by Professionals</div>
         </div>
       </div>
 
       <div class="auth-form-wrap">
-        <div class="auth-form-card">
+        <div class="auth-form-card register-form-card">
           <div class="eyebrow-chip">Register</div>
           <h2>Create your InterviewForge account.</h2>
           <p class="support-copy">Set up your workspace in under a minute and start with a premium practice flow.</p>
@@ -40,25 +106,30 @@
 
           <form class="auth-form" method="post" novalidate>
             <div class="auth-field">
+              <input class="auth-input" type="text" id="full_name" name="full_name" value="{{ full_name }}"
+                placeholder=" " autocomplete="name" required />
               <label for="full_name">Full name</label>
-              <input class="auth-input" type="text" id="full_name" name="full_name" value="{{ full_name }}" placeholder="Jordan Lee" autocomplete="name" required />
             </div>
             <div class="auth-field">
+              <input class="auth-input" type="email" id="email" name="email" value="{{ email }}" placeholder=" "
+                autocomplete="email" required />
               <label for="email">Email</label>
-              <input class="auth-input" type="email" id="email" name="email" value="{{ email }}" placeholder="you@company.com" autocomplete="email" required />
             </div>
             <div class="auth-field">
-              <label for="password">Password</label>
               <div class="auth-password-row">
-                <input class="auth-input" type="password" id="password" name="password" placeholder="Create a password" autocomplete="new-password" required />
+                <input class="auth-input" type="password" id="password" name="password" placeholder=" "
+                  autocomplete="new-password" required />
+                <label for="password">Password</label>
                 <button class="password-toggle" type="button" data-toggle-password data-target="password">Show</button>
               </div>
             </div>
             <div class="auth-field">
-              <label for="confirm_password">Confirm password</label>
               <div class="auth-password-row">
-                <input class="auth-input" type="password" id="confirm_password" name="confirm_password" placeholder="Repeat your password" autocomplete="new-password" required />
-                <button class="password-toggle" type="button" data-toggle-password data-target="confirm_password">Show</button>
+                <input class="auth-input" type="password" id="confirm_password" name="confirm_password" placeholder=" "
+                  autocomplete="new-password" required />
+                <label for="confirm_password">Confirm password</label>
+                <button class="password-toggle" type="button" data-toggle-password
+                  data-target="confirm_password">Show</button>
               </div>
             </div>
             <button class="auth-submit" type="submit">Create account</button>
@@ -68,7 +139,8 @@
             <span>Already have an account?</span>
             <a href="{{ url_for('login') }}">Sign in</a>
           </div>
-          <p class="auth-hint">Use at least 8 characters. You can always refine your profile and interview targets later.</p>
+          <p class="auth-hint">Use at least 8 characters. You can always refine your profile and interview targets
+            later.</p>
         </div>
       </div>
     </div>

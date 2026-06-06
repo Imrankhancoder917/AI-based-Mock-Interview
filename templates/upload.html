@@ -1,84 +1,899 @@
 {% extends "base.html" %}
 
 {% block page_styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard-premium.css') }}" />
 <link rel="stylesheet" href="{{ url_for('static', filename='css/upload.css') }}" />
 {% endblock %}
 
 {% block content %}
-<section class="upload-shell">
-  <div class="upload-layout glass-card reveal-up visible">
-    <div class="upload-copy">
-      <div class="eyebrow-chip">Upload system</div>
-      <h1>Drop in a resume or job description and parse it instantly.</h1>
-      <p>Secure uploads with PDF, DOCX, JPG, and PNG support. InterviewForge extracts structured signals to power adaptive interview sessions.</p>
+<div class="dash-shell">
+  <!-- Sidebar -->
+  <aside class="dash-sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-logo">IF</div>
+      <div class="brand-text">InterviewForge</div>
+    </div>
 
-      <div class="upload-highlights">
-        <div class="mini-card glass-card">
-          <strong>Resume parsing</strong>
-          <span>Skills, projects, certifications, education, experience</span>
+    <nav class="sidebar-nav">
+      <a href="{{ url_for('landing') }}"
+        class="nav-btn-premium {% if request.endpoint == 'landing' %}active{% endif %}">
+        <div class="nav-icon-container"><i class="bi bi-house-door"></i></div> <span>Home</span>
+      </a>
+      <a href="{{ url_for('dashboard') }}"
+        class="nav-btn-premium {% if request.endpoint == 'dashboard' %}active{% endif %}">
+        <div class="nav-icon-container"><i class="bi bi-grid"></i></div> <span>Dashboard</span>
+      </a>
+      <a href="{{ url_for('interview_room') }}"
+        class="nav-btn-premium {% if request.endpoint == 'interview_room' %}active{% endif %}">
+        <div class="nav-icon-container"><i class="bi bi-camera-video"></i></div> <span>Mock Interview</span>
+      </a>
+      <a href="{{ url_for('reports.latest_report') }}"
+        class="nav-btn-premium {% if request.endpoint == 'reports.latest_report' %}active{% endif %}">
+        <div class="nav-icon-container"><i class="bi bi-download"></i></div> <span>Download Report</span>
+      </a>
+      <a href="{{ url_for('upload') }}" class="nav-btn-premium {% if request.endpoint == 'upload' %}active{% endif %}">
+        <div class="nav-icon-container"><i class="bi bi-cloud-upload"></i></div> <span>Upload Resume</span>
+      </a>
+      <a href="{{ url_for('logout') }}" class="nav-btn-premium nav-btn-logout">
+        <div class="nav-icon-container"><i class="bi bi-box-arrow-right"></i></div> <span>Logout</span>
+      </a>
+    </nav>
+
+    <div class="sidebar-bottom">
+      <!-- AI Assistant Card inside Sidebar -->
+      <div class="sidebar-ai-card">
+        <div class="sidebar-ai-header">
+          <span class="online-dot"></span> Online
         </div>
-        <div class="mini-card glass-card">
-          <strong>JD parsing</strong>
-          <span>Required skills, responsibilities, technologies</span>
+        <img src="{{ url_for('static', filename='img/robot image.png') }}" class="sidebar-robot" alt="AI Assistant">
+        <h4>Need Help?</h4>
+        <p>I'm here to help you prepare for your interviews.</p>
+        <button class="nav-btn-premium" style="width: 100%; margin-top: 8px;">
+          <div class="nav-icon-container"><i class="bi bi-chat-dots"></i></div>
+          <span>Chat with AI</span>
+        </button>
+      </div>
+
+      <!-- User Profile inside Sidebar -->
+      {% include 'components/profile_card.html' %}
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="dash-main">
+    <!-- Top Bar -->
+    <header class="dash-topbar">
+      <div class="topbar-left">
+        <nav class="breadcrumb-nav">
+          <a href="{{ url_for('dashboard') }}">Dashboard</a> &gt; <span class="breadcrumb-active">AI Resume
+            Review</span>
+        </nav>
+        <h1>AI Resume Review</h1>
+        <p>Upload your resume and job description to get AI-powered insights and match analysis.</p>
+      </div>
+      <div class="topbar-right">
+        <div class="streak-badge"><i class="bi bi-fire" style="color: #EF4444;"></i> <strong>7</strong> Day Streak</div>
+        <div class="topbar-icon" id="notificationBell">
+          <i class="bi bi-bell"></i>
+          <span class="badge" id="notificationBadge" style="display: none;">0</span>
+
+          <!-- Notification Dropdown -->
+          <div class="notification-dropdown" id="notificationDropdown">
+            <div class="dropdown-header">
+              <h3>Notifications</h3>
+              <div class="dropdown-actions">
+                <button id="markAllRead" class="btn-text">Mark as read</button>
+                <button id="clearAllNotifications" class="btn-text">Clear all</button>
+              </div>
+            </div>
+            <div class="dropdown-body" id="notificationList">
+              <!-- Items loaded dynamically -->
+            </div>
+          </div>
         </div>
+
+      </div>
+    </header>
+
+    <div class="dash-content">
+      <!-- Step Indicator -->
+      <section class="step-indicator-bar">
+        <div class="step-item active" id="step1Indicator">
+          <span class="step-number">1</span>
+          <span class="step-label">Upload Documents</span>
+        </div>
+        <div class="step-connector"></div>
+        <div class="step-item" id="step2Indicator">
+          <span class="step-number">2</span>
+          <span class="step-label">Review Analysis</span>
+        </div>
+      </section>
+
+      <!-- Main Layout Grid -->
+      <div class="upload-flex-container">
+
+        <!-- RESUME SECTION -->
+        <div class="document-section shadow-sm mb-4">
+          <div class="section-header d-flex justify-content-between align-items-center">
+            <h3><i class="bi bi-file-earmark-person"></i> Current Active Resume</h3>
+            {% if active_resume %}
+            <button type="button" class="btn btn-outline-primary btn-sm"
+              onclick="window.document.getElementById('resumeDropZone').style.display='block'; this.style.display='none';">
+              <i class="bi bi-arrow-repeat"></i> Replace Resume
+            </button>
+            {% endif %}
+          </div>
+
+          <div class="section-body p-4">
+            <div id="resumeDropZone" class="drop-zone-premium" {% if active_resume %}style="display: none;" {% endif %}
+              ondragover="event.preventDefault(); this.classList.add('dragover');"
+              ondragleave="this.classList.remove('dragover');"
+              ondrop="event.preventDefault(); this.classList.remove('dragover'); if(event.dataTransfer.files[0]) uploadDocumentAjax(event.dataTransfer.files[0],'resume');">
+              <input type="file" name="document" id="resumeInput" class="file-input-hidden"
+                accept=".pdf,.docx,.jpg,.jpeg,.png"
+                onchange="if(this.files[0]) uploadDocumentAjax(this.files[0],'resume');" />
+              <div class="drop-illustration" onclick="document.getElementById('resumeInput').click();"
+                style="cursor:pointer;">
+                <i class="bi bi-cloud-arrow-up"></i>
+              </div>
+              <p class="drop-text">Drag &amp; Drop Resume Here</p>
+              <span class="drop-separator">or</span>
+              <button type="button" class="btn-choose-file"
+                onclick="document.getElementById('resumeInput').click();">Choose File</button>
+              <div class="drop-rules">Supported: PDF, DOCX, JPG, PNG (Max 16 MB)</div>
+            </div>
+
+            {% if all_resumes %}
+            <div class="mb-4">
+              <h5 class="mb-3">Resume Library</h5>
+              <div class="list-group">
+                {% for res in all_resumes %}
+                <div
+                  class="list-group-item d-flex justify-content-between align-items-center {% if res.is_active %}list-group-item-success{% endif %}">
+                  <div>
+                    <h6 class="mb-0">{{ res.profile_name }}</h6>
+                    <small class="text-muted">Uploaded on {{ res.created_at.strftime('%b %d, %Y') }}</small>
+                  </div>
+                  <div>
+                    {% if res.is_active %}
+                    <span class="badge bg-success me-2">Active</span>
+                    {% else %}
+                    <button type="button" class="btn btn-sm btn-outline-success me-2"
+                      onclick="setDocumentActive('resume', {{ res.id }})">Set Active</button>
+                    {% endif %}
+                    <button type="button" class="btn btn-sm btn-outline-danger"
+                      onclick="deleteDocument('resume', {{ res.id }})">Delete</button>
+                  </div>
+                </div>
+                {% endfor %}
+              </div>
+            </div>
+            {% endif %}
+
+            <div class="active-document-banner mb-4 p-3 rounded"
+              style="background: rgba(16, 185, 129, 0.1); border-left: 4px solid #10B981; {% if not active_resume %}display: none;{% endif %}">
+              <div class="d-flex align-items-center">
+                <i class="bi bi-check-circle-fill text-success fs-4 me-3"></i>
+                <div>
+                  <h5 class="mb-1 text-success">Active: {{ active_resume.profile_name if active_resume else '' }}</h5>
+                </div>
+              </div>
+            </div>
+
+            <!-- Extracted Info Cards for Resume -->
+            <div class="row g-3">
+              <div class="col-md-6">
+                <div class="card h-100 border-0 shadow-sm" style="background: var(--card-bg);">
+                  <div class="card-body">
+                    <h5 class="card-title"><i class="bi bi-tools text-primary"></i> Skills</h5>
+                    <div class="d-flex flex-wrap gap-2 mt-3">
+                      {% if active_resume and active_resume.parsed_resume_data and
+                      active_resume.parsed_resume_data.skills %}
+                      {% if active_resume.parsed_resume_data.skills is mapping %}
+                      {% for category, skills_list in active_resume.parsed_resume_data.skills.items() %}
+                      {% if skills_list %}
+                      <div class="mb-2 w-100">
+                        <h6 class="mb-1 text-secondary small">{{ category }}:</h6>
+                        {% for item in skills_list %}
+                        <span class="badge" style="background: rgba(37, 99, 235, 0.1); color: #2563EB;">{{ item
+                          }}</span>
+                        {% endfor %}
+                      </div>
+                      {% endif %}
+                      {% endfor %}
+                      {% else %}
+                      {% for item in active_resume.parsed_resume_data.skills %}
+                      <span class="badge" style="background: rgba(37, 99, 235, 0.1); color: #2563EB;">{{ item }}</span>
+                      {% endfor %}
+                      {% endif %}
+                      {% else %}
+                      <p class="text-muted small">No skills detected.</p>
+                      {% endif %}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="card h-100 border-0 shadow-sm" style="background: var(--card-bg);">
+                  <div class="card-body">
+                    <h5 class="card-title"><i class="bi bi-laptop text-primary"></i> Technologies</h5>
+                    <div class="d-flex flex-wrap gap-2 mt-3">
+                      {% if active_resume and active_resume.parsed_resume_data and
+                      active_resume.parsed_resume_data.technologies %}
+                      {% for item in active_resume.parsed_resume_data.technologies %}
+                      <span class="badge" style="background: rgba(139, 92, 246, 0.1); color: #8B5CF6;">{{ item }}</span>
+                      {% endfor %}
+                      {% else %}
+                      <p class="text-muted small">No technologies detected.</p>
+                      {% endif %}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="card h-100 border-0 shadow-sm" style="background: var(--card-bg);">
+                  <div class="card-body">
+                    <h5 class="card-title"><i class="bi bi-journal-code text-primary"></i> Projects</h5>
+                    <ul class="list-unstyled mt-3 mb-0">
+                      {% if active_resume and active_resume.parsed_resume_data and
+                      active_resume.parsed_resume_data.projects %}
+                      {% for item in active_resume.parsed_resume_data.projects %}
+                      <li class="mb-2">
+                        <i class="bi bi-dot text-primary"></i>
+                        {% if item is mapping %}
+                        <span class="small fw-bold">{{ item.name }}</span>
+                        {% if item.tech_stack %}
+                        <br><span class="small text-muted ms-3">Tech Stack: {{ item.tech_stack | join(', ') }}</span>
+                        {% endif %}
+                        {% else %}
+                        <span class="small">{{ item }}</span>
+                        {% endif %}
+                      </li>
+                      {% endfor %}
+                      {% else %}
+                      <p class="text-muted small">No projects detected.</p>
+                      {% endif %}
+                    </ul>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="card h-100 border-0 shadow-sm" style="background: var(--card-bg);">
+                  <div class="card-body">
+                    <h5 class="card-title"><i class="bi bi-briefcase text-primary"></i> Internships</h5>
+                    <ul class="list-unstyled mt-3 mb-0">
+                      {% if active_resume and active_resume.parsed_resume_data and
+                      active_resume.parsed_resume_data.internships %}
+                      {% for item in active_resume.parsed_resume_data.internships %}
+                      <li class="mb-2">
+                        <i class="bi bi-dot text-primary"></i>
+                        {% if item is mapping %}
+                        <span class="small fw-bold">{{ item.company }}</span>
+                        <br><span class="small text-muted ms-3">{{ item.role }} | {{ item.duration }}</span>
+                        {% else %}
+                        <span class="small">{{ item }}</span>
+                        {% endif %}
+                      </li>
+                      {% endfor %}
+                      {% else %}
+                      <p class="text-muted small">No internships detected.</p>
+                      {% endif %}
+                    </ul>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="card h-100 border-0 shadow-sm" style="background: var(--card-bg);">
+                  <div class="card-body">
+                    <h5 class="card-title"><i class="bi bi-book text-primary"></i> Education</h5>
+                    <ul class="list-unstyled mt-3 mb-0">
+                      {% if active_resume and active_resume.parsed_resume_data and
+                      active_resume.parsed_resume_data.education %}
+                      {% for item in active_resume.parsed_resume_data.education %}
+                      <li class="mb-2"><i class="bi bi-dot text-primary"></i> <span class="small">{{ item }}</span></li>
+                      {% endfor %}
+                      {% else %}
+                      <p class="text-muted small">No education detected.</p>
+                      {% endif %}
+                    </ul>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="card h-100 border-0 shadow-sm" style="background: var(--card-bg);">
+                  <div class="card-body">
+                    <h5 class="card-title"><i class="bi bi-award text-primary"></i> Certificates</h5>
+                    <ul class="list-unstyled mt-3 mb-0">
+                      {% if active_resume and active_resume.parsed_resume_data and
+                      active_resume.parsed_resume_data.certificates %}
+                      {% for item in active_resume.parsed_resume_data.certificates %}
+                      <li class="mb-2">
+                        <i class="bi bi-dot text-primary"></i>
+                        {% if item is mapping %}
+                        <span class="small fw-bold">{{ item.name }}</span>
+                        {% if item.provider or item.date %}
+                        <br><span class="small text-muted ms-3">{{ item.provider }} - {{ item.date }}</span>
+                        {% endif %}
+                        {% else %}
+                        <span class="small">{{ item }}</span>
+                        {% endif %}
+                      </li>
+                      {% endfor %}
+                      {% else %}
+                      <p class="text-muted small">No certificates detected.</p>
+                      {% endif %}
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- JD SECTION -->
+        <div class="document-section shadow-sm">
+          <div class="section-header d-flex justify-content-between align-items-center">
+            <h3><i class="bi bi-briefcase"></i> Current Active Job Description</h3>
+            {% if active_jd %}
+            <button type="button" class="btn btn-outline-primary btn-sm"
+              onclick="window.document.getElementById('jdDropZone').style.display='block'; this.style.display='none';">
+              <i class="bi bi-arrow-repeat"></i> Replace JD
+            </button>
+            {% endif %}
+          </div>
+
+          <div class="section-body p-4">
+            <div id="jdDropZone" class="drop-zone-premium" {% if active_jd %}style="display: none;" {% endif %}
+              ondragover="event.preventDefault(); this.classList.add('dragover');"
+              ondragleave="this.classList.remove('dragover');"
+              ondrop="event.preventDefault(); this.classList.remove('dragover'); if(event.dataTransfer.files[0]) uploadDocumentAjax(event.dataTransfer.files[0],'jd');">
+              <input type="file" name="document" id="jdInput" class="file-input-hidden"
+                accept=".pdf,.docx,.jpg,.jpeg,.png"
+                onchange="if(this.files[0]) uploadDocumentAjax(this.files[0],'jd');" />
+              <div class="drop-illustration" onclick="document.getElementById('jdInput').click();"
+                style="cursor:pointer;">
+                <i class="bi bi-cloud-arrow-up"></i>
+              </div>
+              <p class="drop-text">Drag &amp; Drop Job Description Here</p>
+              <span class="drop-separator">or</span>
+              <button type="button" class="btn-choose-file" onclick="document.getElementById('jdInput').click();">Choose
+                File</button>
+              <div class="drop-rules">Supported: PDF, DOCX, JPG, PNG (Max 16 MB)</div>
+            </div>
+
+            {% if all_jds %}
+            <div class="mb-4">
+              <h5 class="mb-3">Job Description Library</h5>
+              <div class="list-group">
+                {% for jd in all_jds %}
+                <div
+                  class="list-group-item d-flex justify-content-between align-items-center {% if jd.is_active %}list-group-item-primary{% endif %}">
+                  <div>
+                    <h6 class="mb-0">{{ jd.title }}</h6>
+                    <small class="text-muted">Uploaded on {{ jd.created_at.strftime('%b %d, %Y') }}</small>
+                  </div>
+                  <div>
+                    {% if jd.is_active %}
+                    <span class="badge bg-primary me-2">Active</span>
+                    {% else %}
+                    <button type="button" class="btn btn-sm btn-outline-primary me-2"
+                      onclick="setDocumentActive('jd', {{ jd.id }})">Set Active</button>
+                    {% endif %}
+                    <button type="button" class="btn btn-sm btn-outline-danger"
+                      onclick="deleteDocument('jd', {{ jd.id }})">Delete</button>
+                  </div>
+                </div>
+                {% endfor %}
+              </div>
+            </div>
+            {% endif %}
+
+            <div class="active-document-banner mb-4 p-3 rounded"
+              style="background: rgba(37, 99, 235, 0.1); border-left: 4px solid #2563EB; {% if not active_jd %}display: none;{% endif %}">
+              <div class="d-flex align-items-center">
+                <i class="bi bi-check-circle-fill text-primary fs-4 me-3"></i>
+                <div>
+                  <h5 class="mb-1 text-primary">Active: {{ active_jd.title if active_jd }}</h5>
+                </div>
+              </div>
+            </div>
+
+            <!-- Extracted Info Cards for JD -->
+            <div class="row g-3">
+              <div class="col-md-6">
+                <div class="card h-100 border-0 shadow-sm" style="background: var(--card-bg);">
+                  <div class="card-body">
+                    <h5 class="card-title"><i class="bi bi-person-badge text-primary"></i> Role & Experience</h5>
+                    <div class="mt-3">
+                      <p class="mb-1"><strong>Role:</strong> {{ active_jd.parsed_jd_data.role if active_jd and
+                        active_jd.parsed_jd_data else 'N/A' }}</p>
+                      <p class="mb-0"><strong>Experience Level:</strong> {{ active_jd.parsed_jd_data.experience_level |
+                        capitalize if active_jd and active_jd.parsed_jd_data else 'N/A' }}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="card h-100 border-0 shadow-sm" style="background: var(--card-bg);">
+                  <div class="card-body">
+                    <h5 class="card-title"><i class="bi bi-tools text-primary"></i> Required Skills</h5>
+                    <div class="d-flex flex-wrap gap-2 mt-3">
+                      {% if active_jd and active_jd.parsed_jd_data and active_jd.parsed_jd_data.required_skills %}
+                      {% for item in active_jd.parsed_jd_data.required_skills %}
+                      <span class="badge" style="background: rgba(37, 99, 235, 0.1); color: #2563EB;">{{ item }}</span>
+                      {% endfor %}
+                      {% else %}
+                      <p class="text-muted small">No required skills detected.</p>
+                      {% endif %}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="col-12">
+                <div class="card h-100 border-0 shadow-sm" style="background: var(--card-bg);">
+                  <div class="card-body">
+                    <h5 class="card-title"><i class="bi bi-list-task text-primary"></i> Responsibilities</h5>
+                    <ul class="list-unstyled mt-3 mb-0">
+                      {% if active_jd and active_jd.parsed_jd_data and active_jd.parsed_jd_data.responsibilities %}
+                      {% for item in active_jd.parsed_jd_data.responsibilities %}
+                      <li class="mb-2"><i class="bi bi-dot text-primary"></i> <span class="small">{{ item }}</span></li>
+                      {% endfor %}
+                      {% else %}
+                      <p class="text-muted small">No responsibilities detected.</p>
+                      {% endif %}
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SKILL MATCH SECTION -->
+        <div class="document-section shadow-sm" style="margin-top: 1.5rem;">
+          <div class="section-header d-flex justify-content-between align-items-center">
+            <h3><i class="bi bi-diagram-3-fill"></i> Skill Match Analysis</h3>
+          </div>
+
+          <div class="section-body p-4">
+            {% if not skill_match.has_resume and not skill_match.has_jd %}
+            <!-- Neither uploaded -->
+            <div style="text-align: center; padding: 2rem 1rem; opacity: 0.75;">
+              <i class="bi bi-cloud-upload"
+                style="font-size: 2.5rem; color: var(--text-muted); display: block; margin-bottom: 0.5rem;"></i>
+              <p class="text-muted fw-medium mb-1">Upload a Resume and Job Description</p>
+              <p class="text-muted" style="font-size: 0.85rem;">to unlock skill matching insights.</p>
+            </div>
+
+            {% elif not skill_match.has_jd %}
+            <!-- Resume but no JD -->
+            <div style="text-align: center; padding: 2rem 1rem; opacity: 0.75;">
+              <i class="bi bi-briefcase"
+                style="font-size: 2.5rem; color: var(--text-muted); display: block; margin-bottom: 0.5rem;"></i>
+              <p class="text-muted fw-medium mb-1">Upload a Job Description to view skill matching.</p>
+            </div>
+
+            {% elif not skill_match.has_resume %}
+            <!-- JD but no resume -->
+            <div style="text-align: center; padding: 2rem 1rem; opacity: 0.75;">
+              <i class="bi bi-file-earmark-person"
+                style="font-size: 2.5rem; color: var(--text-muted); display: block; margin-bottom: 0.5rem;"></i>
+              <p class="text-muted fw-medium mb-1">Upload a Resume to view skill matching.</p>
+            </div>
+
+            {% else %}
+            <!-- Full match data available -->
+            <div style="display: grid; grid-template-columns: auto 1fr; gap: 2rem; align-items: start;">
+
+              <!-- Circular progress gauge -->
+              <div style="position: relative; width: 130px; height: 130px; flex-shrink: 0;">
+                <svg viewBox="0 0 36 36" style="width: 130px; height: 130px; transform: rotate(-90deg);">
+                  <circle cx="18" cy="18" r="15.9" fill="none" stroke="rgba(37,99,235,0.08)" stroke-width="3" />
+                  <circle cx="18" cy="18" r="15.9" fill="none"
+                    stroke="{% if skill_match.match_pct >= 70 %}#10B981{% elif skill_match.match_pct >= 40 %}#F59E0B{% else %}#EF4444{% endif %}"
+                    stroke-width="3" stroke-linecap="round" stroke-dasharray="{{ skill_match.match_pct }}, 100" />
+                </svg>
+                <div
+                  style="position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;">
+                  <span
+                    style="font-size: 1.6rem; font-weight: 800; line-height: 1;
+                      color: {% if skill_match.match_pct >= 70 %}#10B981{% elif skill_match.match_pct >= 40 %}#F59E0B{% else %}#EF4444{% endif %};">
+                    {{ skill_match.match_pct }}%
+                  </span>
+                  <span
+                    style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600; margin-top: 0.2rem;">Match</span>
+                </div>
+              </div>
+
+              <!-- Stats + badge pills -->
+              <div>
+                <!-- Stat counters row -->
+                <div style="display: flex; gap: 1.5rem; margin-bottom: 1.25rem; flex-wrap: wrap;">
+                  <div style="text-align: center;">
+                    <div style="font-size: 1.5rem; font-weight: 800; color: #0F172A; line-height: 1;">{{
+                      skill_match.resume_total }}</div>
+                    <div
+                      style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em;">
+                      Resume Skills</div>
+                  </div>
+                  <div style="width: 1px; background: #E2E8F0;"></div>
+                  <div style="text-align: center;">
+                    <div style="font-size: 1.5rem; font-weight: 800; color: #0F172A; line-height: 1;">{{
+                      skill_match.jd_total }}</div>
+                    <div
+                      style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em;">
+                      JD Skills</div>
+                  </div>
+                  <div style="width: 1px; background: #E2E8F0;"></div>
+                  <div style="text-align: center;">
+                    <div style="font-size: 1.5rem; font-weight: 800; color: #10B981; line-height: 1;">{{
+                      skill_match.matched | length }}</div>
+                    <div
+                      style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em;">
+                      Matched</div>
+                  </div>
+                  <div style="width: 1px; background: #E2E8F0;"></div>
+                  <div style="text-align: center;">
+                    <div style="font-size: 1.5rem; font-weight: 800; color: #EF4444; line-height: 1;">{{
+                      skill_match.missing | length }}</div>
+                    <div
+                      style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em;">
+                      Missing</div>
+                  </div>
+                </div>
+
+                <!-- Top matched pills (up to 5) with toggle -->
+                {% if skill_match.matched %}
+                <div style="margin-bottom: 0.75rem;">
+                  <span
+                    style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; display: block; margin-bottom: 0.5rem;">
+                    <i class="bi bi-check-circle-fill" style="color: #10B981;"></i> Matched Skills ({{
+                    skill_match.matched | length }})
+                  </span>
+                  <div style="display: flex; flex-wrap: wrap; gap: 0.4rem;" id="uploadMatchedSkillsPreview">
+                    {% for skill in skill_match.matched[:5] %}
+                    <span
+                      style="background: rgba(16,185,129,0.1); color: #059669; border: 1px solid rgba(16,185,129,0.25); border-radius: 99px; padding: 0.3rem 0.75rem; font-size: 0.85rem; font-weight: 600; display: inline-flex; align-items: center; gap: 0.25rem;">
+                      <i class="bi bi-check-lg"></i> {{ skill }}
+                    </span>
+                    {% endfor %}
+                    {% if skill_match.matched | length > 5 %}
+                    <button
+                      onclick="document.getElementById('uploadMatchedSkillsFull').style.display='flex'; this.style.display='none'; document.getElementById('uploadMatchedSkillsPreview').style.display='none';"
+                      class="btn btn-sm btn-link text-decoration-none"
+                      style="font-size: 0.85rem; padding: 0; margin-left: 0.25rem; font-weight: 600; color: #2563EB;">+{{
+                      skill_match.matched | length - 5 }} More (View All Matched Skills)</button>
+                    {% endif %}
+                  </div>
+
+                  {% if skill_match.matched | length > 5 %}
+                  <div style="display: none; flex-wrap: wrap; gap: 0.4rem; animation: fadeIn 0.3s ease-in-out;"
+                    id="uploadMatchedSkillsFull">
+                    {% for skill in skill_match.matched %}
+                    <span
+                      style="background: rgba(16,185,129,0.1); color: #059669; border: 1px solid rgba(16,185,129,0.25); border-radius: 99px; padding: 0.3rem 0.75rem; font-size: 0.85rem; font-weight: 600; display: inline-flex; align-items: center; gap: 0.25rem;">
+                      <i class="bi bi-check-lg"></i> {{ skill }}
+                    </span>
+                    {% endfor %}
+                    <button
+                      onclick="document.getElementById('uploadMatchedSkillsFull').style.display='none'; document.getElementById('uploadMatchedSkillsPreview').style.display='flex'; document.getElementById('uploadMatchedSkillsPreview').querySelector('button').style.display='inline-block';"
+                      class="btn btn-sm btn-link text-decoration-none text-muted"
+                      style="font-size: 0.85rem; padding: 0; margin-left: 0.25rem; font-weight: 600;">Collapse</button>
+                  </div>
+                  {% endif %}
+                </div>
+                {% endif %}
+
+                <!-- Missing skills (up to 5) with toggle -->
+                {% if skill_match.missing %}
+                <div style="margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid #F1F5F9;">
+                  <div
+                    style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+                    <span
+                      style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em;">
+                      <i class="bi bi-exclamation-triangle-fill" style="color: #EF4444;"></i> Skill Gaps ({{
+                      skill_match.missing | length }})
+                    </span>
+                  </div>
+
+                  <div style="display: flex; flex-wrap: wrap; gap: 0.4rem;" id="uploadMissingSkillsPreview">
+                    {% for skill in skill_match.missing[:5] %}
+                    <span
+                      style="background: rgba(239,68,68,0.08); color: #DC2626; border: 1px solid rgba(239,68,68,0.2); border-radius: 99px; padding: 0.3rem 0.75rem; font-size: 0.85rem; font-weight: 600;">
+                      {{ skill }}
+                    </span>
+                    {% endfor %}
+                    {% if skill_match.missing | length > 5 %}
+                    <button
+                      onclick="document.getElementById('uploadMissingSkillsFull').style.display='flex'; this.style.display='none'; document.getElementById('uploadMissingSkillsPreview').style.display='none';"
+                      class="btn btn-sm btn-link text-decoration-none"
+                      style="font-size: 0.85rem; padding: 0; margin-left: 0.25rem; font-weight: 600; color: #2563EB;">+{{
+                      skill_match.missing | length - 5 }} More (View All Missing Skills)</button>
+                    {% endif %}
+                  </div>
+
+                  {% if skill_match.missing | length > 5 %}
+                  <div style="display: none; flex-wrap: wrap; gap: 0.4rem; animation: fadeIn 0.3s ease-in-out;"
+                    id="uploadMissingSkillsFull">
+                    {% for skill in skill_match.missing %}
+                    <span
+                      style="background: rgba(239,68,68,0.08); color: #DC2626; border: 1px solid rgba(239,68,68,0.2); border-radius: 99px; padding: 0.3rem 0.75rem; font-size: 0.85rem; font-weight: 600;">
+                      {{ skill }}
+                    </span>
+                    {% endfor %}
+                    <button
+                      onclick="document.getElementById('uploadMissingSkillsFull').style.display='none'; document.getElementById('uploadMissingSkillsPreview').style.display='flex'; document.getElementById('uploadMissingSkillsPreview').querySelector('button').style.display='inline-block';"
+                      class="btn btn-sm btn-link text-decoration-none text-muted"
+                      style="font-size: 0.85rem; padding: 0; margin-left: 0.25rem; font-weight: 600;">Collapse</button>
+                  </div>
+                  {% endif %}
+                </div>
+                {% endif %}
+              </div>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+
       </div>
     </div>
+  </main>
+</div>
 
-    <div class="upload-panel glass-card">
-      <form id="uploadForm" class="upload-form" method="post" enctype="multipart/form-data" novalidate>
-        <div class="upload-mode">
-          <label class="mode-chip active">
-            <input type="radio" name="document_type" value="resume" checked />
-            <span>Resume</span>
-          </label>
-          <label class="mode-chip">
-            <input type="radio" name="document_type" value="jd" />
-            <span>Job description</span>
-          </label>
-        </div>
+<!-- ===== Toast Notification Container ===== -->
+<div id="uploadToastContainer" style="
+  position: fixed; top: 1.5rem; right: 1.5rem; z-index: 9999;
+  display: flex; flex-direction: column; gap: 0.6rem; pointer-events: none;
+"></div>
 
-        <div id="dropZone" class="drop-zone">
-          <input id="fileInput" class="file-input" type="file" name="document" accept=".pdf,.docx,.jpg,.jpeg,.png" />
-          <div class="drop-icon">⇪</div>
-          <h2>Drag and drop your file here</h2>
-          <p>or click to browse your device</p>
-          <button type="button" class="browse-btn">Choose file</button>
-        </div>
+<!-- ===== Upload Progress Overlay ===== -->
+<!-- Glassmorphism AI Processing Overlay -->
+<div class="processing-overlay" id="processingOverlay" style="display: none;">
+  <div class="overlay-card">
+    <div class="overlay-spinner-wrap">
+      <svg viewBox="0 0 100 100" class="overlay-spinner">
+        <circle cx="50" cy="50" r="44" stroke="rgba(37,99,235,0.08)" stroke-width="6" fill="none" />
+        <circle cx="50" cy="50" r="44" stroke="url(#spinnerGradient)" stroke-width="6" fill="none"
+          stroke-linecap="round" class="spinner-progress-circle" />
+        <defs>
+          <linearGradient id="spinnerGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#2563EB" />
+            <stop offset="50%" stop-color="#8B5CF6" />
+            <stop offset="100%" stop-color="#06B6D4" />
+          </linearGradient>
+        </defs>
+      </svg>
+      <div class="overlay-percentage-text" id="overlayPercent">0%</div>
+    </div>
 
-        <div id="filePreview" class="file-preview" hidden>
-          <div>
-            <strong id="fileName"></strong>
-            <span id="fileMeta"></span>
-          </div>
-          <button type="button" id="removeFileBtn" class="remove-file-btn">Remove</button>
-        </div>
+    <div class="overlay-status-wrap">
+      <h3 id="overlayStatusTitle">Analyzing Documents</h3>
+      <p id="overlayStatusDesc">Reading resume files and extracting data...</p>
+    </div>
 
-        <div class="upload-actions">
-          <button type="submit" class="upload-submit">Upload and parse</button>
-          <a class="upload-link" href="{{ url_for('dashboard') }}">Back to dashboard</a>
-        </div>
-
-        <div id="progressWrap" class="progress-wrap" hidden>
-          <div class="progress-bar-shell"><div id="progressBar" class="progress-bar-fill"></div></div>
-          <span id="progressLabel">Preparing upload...</span>
-        </div>
-
-        <div id="messageBox" class="message-box" hidden></div>
-      </form>
+    <div class="overlay-progress-bar-wrap">
+      <div class="overlay-progress-bar-fill" id="overlayProgressBarFill"></div>
     </div>
   </div>
+</div>
 
-  <div id="resultsArea" class="results-area" {% if not parsed_result %}hidden{% endif %}>
-    {% if parsed_result %}
-      {% include "upload_result_partial.html" %}
-    {% endif %}
+<!-- Floating Chat Widget -->
+<div class="floating-chat-widget" id="chatWidget" style="display: none;">
+  <div class="chat-header">
+    <div class="chat-title">
+      <span class="online-dot-small"></span>
+      <span>InterviewForge Assistant</span>
+    </div>
+    <div class="chat-controls">
+      <i class="bi bi-dash-lg" id="chatMinimize" title="Minimize"></i>
+      <i class="bi bi-fullscreen" id="chatMaximize" title="Maximize"></i>
+      <i class="bi bi-x-lg" id="chatClose" title="Close"></i>
+    </div>
   </div>
-</section>
+  <div class="chat-body-wrapper">
+    <div class="chat-body" id="chatBody">
+      <!-- Welcomes and dynamic messages will be rendered by JS -->
+    </div>
+    <div class="chat-input-area">
+      <input type="text" id="chatInput" placeholder="Ask a question..." />
+      <button class="chat-send-btn" id="chatSend"><i class="bi bi-send"></i></button>
+    </div>
+  </div>
+</div>
 {% endblock %}
 
 {% block page_scripts %}
+<script src="{{ url_for('static', filename='js/dashboard-premium.js') }}"></script>
+
+<!-- ===== AJAX Upload + Toast System ===== -->
 <script>
-  window.__UPLOAD_INITIAL_RESULT__ = {{ parsed_result | tojson if parsed_result else 'null' }};
+  // -------------------------------------------------------
+  // Toast helper
+  // -------------------------------------------------------
+  function showUploadToast(message, type) {
+    const container = document.getElementById('uploadToastContainer');
+    if (!container) return;
+    const colors = {
+      success: { bg: 'rgba(16,185,129,0.97)', icon: 'bi-check-circle-fill' },
+      error: { bg: 'rgba(239,68,68,0.97)', icon: 'bi-x-circle-fill' },
+      info: { bg: 'rgba(37,99,235,0.97)', icon: 'bi-info-circle-fill' },
+    };
+    const c = colors[type] || colors.info;
+    const toast = document.createElement('div');
+    toast.style.cssText = [
+      `background:${c.bg}`,
+      'color:#fff',
+      'padding:0.85rem 1.25rem',
+      'border-radius:12px',
+      'display:flex',
+      'align-items:center',
+      'gap:0.65rem',
+      'font-size:0.92rem',
+      'font-weight:600',
+      'box-shadow:0 8px 32px rgba(0,0,0,0.22)',
+      'pointer-events:auto',
+      'min-width:280px',
+      'max-width:420px',
+      'opacity:0',
+      'transform:translateX(40px)',
+      'transition:opacity 0.3s ease,transform 0.3s ease',
+    ].join(';');
+    toast.innerHTML = `<i class="bi ${c.icon}" style="font-size:1.2rem;"></i><span>${message}</span>`;
+    container.appendChild(toast);
+    requestAnimationFrame(() => {
+      toast.style.opacity = '1';
+      toast.style.transform = 'translateX(0)';
+    });
+    setTimeout(() => {
+      toast.style.opacity = '0';
+      toast.style.transform = 'translateX(40px)';
+      setTimeout(() => toast.remove(), 350);
+    }, 3500);
+  }
+
+  // -------------------------------------------------------
+  // Core AJAX upload function
+  // -------------------------------------------------------
+  function uploadDocumentAjax(file, docType) {
+    if (!file) return;
+
+    const label = docType === 'resume' ? 'Resume' : 'Job Description';
+    const dropId = docType === 'resume' ? 'resumeDropZone' : 'jdDropZone';
+    const dropEl = document.getElementById(dropId);
+
+    // Show processing overlay
+    const overlay = document.getElementById('processingOverlay');
+    const overlayTitle = document.getElementById('overlayStatusTitle');
+    const overlayDesc = document.getElementById('overlayStatusDesc');
+    const overlayPct = document.getElementById('overlayPercent');
+    const overlayBar = document.getElementById('overlayProgressBarFill');
+    if (overlay) {
+      overlay.style.display = 'flex';
+      if (overlayTitle) overlayTitle.textContent = `Uploading ${label}…`;
+      if (overlayDesc) overlayDesc.textContent = 'Parsing and classifying skills…';
+      if (overlayPct) overlayPct.textContent = '0%';
+      if (overlayBar) overlayBar.style.width = '0%';
+    }
+
+    // Animate fake progress
+    let pct = 0;
+    const fakeProgress = setInterval(() => {
+      pct = Math.min(pct + Math.random() * 8, 88);
+      if (overlayPct) overlayPct.textContent = Math.round(pct) + '%';
+      if (overlayBar) overlayBar.style.width = pct + '%';
+      const circle = overlay && overlay.querySelector('.spinner-progress-circle');
+      if (circle) circle.style.strokeDashoffset = 276.46 - (pct / 100) * 276.46;
+    }, 120);
+
+    const formData = new FormData();
+    formData.append('document', file);
+    formData.append('document_type', docType);
+
+    fetch('/upload', {
+      method: 'POST',
+      body: formData,
+    })
+      .then(res => res.json())
+      .then(data => {
+        clearInterval(fakeProgress);
+        if (overlayPct) overlayPct.textContent = '100%';
+        if (overlayBar) overlayBar.style.width = '100%';
+        const circle = overlay && overlay.querySelector('.spinner-progress-circle');
+        if (circle) circle.style.strokeDashoffset = 0;
+
+        setTimeout(() => {
+          if (overlay) overlay.style.display = 'none';
+          if (data.ok) {
+            showUploadToast(data.message || `${label} uploaded successfully.`, 'success');
+            // Reload page to refresh library + parsed cards
+            setTimeout(() => window.location.reload(), 1200);
+          } else {
+            showUploadToast(data.error || 'Upload failed. Please try again.', 'error');
+            // Reset file input
+            const inputId = docType === 'resume' ? 'resumeInput' : 'jdInput';
+            const inp = document.getElementById(inputId);
+            if (inp) inp.value = '';
+          }
+        }, 300);
+      })
+      .catch(err => {
+        clearInterval(fakeProgress);
+        if (overlay) overlay.style.display = 'none';
+        showUploadToast('Network error. Please check your connection and try again.', 'error');
+        const inputId = docType === 'resume' ? 'resumeInput' : 'jdInput';
+        const inp = document.getElementById(inputId);
+        if (inp) inp.value = '';
+        console.error('Upload error:', err);
+      });
+  }
 </script>
-<script src="{{ url_for('static', filename='js/upload.js') }}"></script>
+
+<script>
+  // Chat widget logic
+  const chatWidget = document.getElementById("chatWidget");
+  const chatMinimize = document.getElementById("chatMinimize");
+  const chatMaximize = document.getElementById("chatMaximize");
+  const chatClose = document.getElementById("chatClose");
+  const btnRobotCardChat = document.getElementById("btnRobotCardChat");
+
+  if (btnRobotCardChat) {
+    btnRobotCardChat.addEventListener("click", () => {
+      chatWidget.style.display = "flex";
+      chatWidget.classList.remove("minimized");
+    });
+  }
+
+  if (chatClose) {
+    chatClose.addEventListener("click", () => {
+      chatWidget.style.display = "none";
+    });
+  }
+</script>
+<script>
+  function setDocumentActive(docType, docId) {
+    fetch('/api/documents/set-active', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: `type=${docType}&id=${docId}`
+    })
+      .then(response => response.json())
+      .then(data => {
+        if (data.ok) {
+          window.location.reload();
+        } else {
+          alert("Failed to set active document: " + data.error);
+        }
+      })
+      .catch(error => {
+        console.error("Error:", error);
+        alert("An error occurred while setting the document to active.");
+      });
+  }
+
+  function deleteDocument(docType, docId) {
+    if (!confirm("Are you sure you want to delete this document?")) return;
+
+    fetch('/api/documents/delete', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: `type=${docType}&id=${docId}`
+    })
+      .then(response => response.json())
+      .then(data => {
+        if (data.ok) {
+          window.location.reload();
+        } else {
+          alert("Failed to delete document: " + data.error);
+        }
+      })
+      .catch(error => {
+        console.error("Error:", error);
+        alert("An error occurred while deleting the document.");
+      });
+  }
+</script>
 {% endblock %}

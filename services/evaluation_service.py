@@ -52,6 +52,15 @@ class AnswerEvaluation:
     gaps: list[str] = field(default_factory=list)
     follow_up: str = ""
     red_flags: list[str] = field(default_factory=list)
+    relevance: float = 0.0
+    keyword_match: float = 0.0
+    answer_length: float = 0.0
+    technical_accuracy: float = 0.0
+    depth: float = 0.0
+    reasoning_score: float = 0.0
+    communication: float = 0.0
+    repeated_answer_detected: bool = False
+
 
 
 class EvaluationService:
@@ -69,51 +78,104 @@ class EvaluationService:
         expected_signals: Iterable[str] | None = None,
         difficulty: int = 5,
         trap_mode: bool = False,
+        session_history: list[dict] | None = None,
     ) -> AnswerEvaluation:
+        # Calculate rule engine objective metrics
+        relevance = self._compute_relevance_score(question, answer, list(expected_signals or []))
+        length = self._compute_length_score(answer)
+        keyword_match = self._compute_keyword_match_score(question, answer, list(expected_signals or []))
+
+        # Check generic and repetition metrics
+        penalty, repeated_detected = self._compute_repetition_penalty_and_flag(answer, session_history)
+        is_generic = False
+        if "project" in question.lower() or "built" in question.lower() or "implemented" in question.lower():
+            if not self._check_project_context(question, answer, list(expected_signals or [])):
+                is_generic = True
+        if self._is_definitional_answer(answer):
+            is_generic = True
+
         # Attempt Groq-based semantic evaluation first
         try:
             api_key = os.environ.get("GROQ_API_KEY", "")
             if api_key:
                 result = self._call_groq_evaluator(question, answer, list(expected_signals or []), difficulty, trap_mode, api_key)
                 if result:
-                    # Ensure deterministic numeric coercion and bounds
-                    score = int(max(0, min(10, int(math.floor(float(result.get("score", 0)))))))
-                    reasoning = str(result.get("reasoning", "")).strip()
+                    # Subjective scores from LLM
+                    technical_accuracy = float(result.get("technical_accuracy", 5.0))
+                    depth = float(result.get("depth", 5.0))
+                    communication = float(result.get("communication", 5.0))
+                    reasoning_score = float(result.get("reasoning_score", 5.0))
+                    reasoning_text = str(result.get("explanation") or result.get("reasoning", "")).strip()
+
+                    # Final Score Formula (0-100)
+                    raw_score = (
+                        relevance * 0.35 +
+                        keyword_match * 0.20 +
+                        length * 0.10 +
+                        technical_accuracy * 0.15 +
+                        depth * 0.10 +
+                        reasoning_score * 0.05 +
+                        communication * 0.05
+                    )
+                    score_100 = raw_score * 10
+
+                    # Caps & Penalties
+                    if not answer.strip():
+                        score_100 = 0.0
+                    elif relevance == 0:
+                        score_100 = min(score_100, 20.0)
+                    elif is_generic:
+                        score_100 = min(score_100, 40.0)
+
+                    score_100 -= penalty
+                    score_100 = max(0.0, min(100.0, score_100))
+                    
+                    final_score = int(round(score_100 / 10.0))
+
                     strengths = [str(s) for s in (result.get("strengths") or [])][:4]
                     gaps = [str(s) for s in (result.get("gaps") or [])][:4]
                     follow_up = str(result.get("follow_up") or "").strip()
                     red_flags = [str(s) for s in (result.get("red_flags") or [])][:3]
 
                     return AnswerEvaluation(
-                        score=score,
-                        reasoning=reasoning,
+                        score=final_score,
+                        reasoning=reasoning_text,
                         strengths=strengths,
                         gaps=gaps,
                         follow_up=follow_up,
                         red_flags=red_flags,
+                        relevance=relevance,
+                        keyword_match=keyword_match,
+                        answer_length=length,
+                        technical_accuracy=technical_accuracy,
+                        depth=depth,
+                        reasoning_score=reasoning_score,
+                        communication=communication,
+                        repeated_answer_detected=repeated_detected
                     )
         except Exception:
-            # any failure falls through to deterministic scorer
             pass
 
-        # Deterministic heuristic fallback (original behavior preserved)
-        return self._heuristic_score(question, answer, expected_signals, difficulty, trap_mode)
+        # Fallback to deterministic scoring
+        return self._heuristic_score(question, answer, expected_signals, difficulty, trap_mode, session_history)
 
     def _call_groq_evaluator(self, question: str, answer: str, expected: list[str], difficulty: int, trap_mode: bool, api_key: str) -> dict | None:
-        """Call Groq responses API to obtain a structured JSON evaluation.
-
-        The model is instructed to return EXACTLY one JSON object with keys:
-        `score` (0-10 int), `reasoning` (short string), `strengths` (array),
-        `gaps` (array), `follow_up` (string), `red_flags` (array).
-        """
+        """Call Groq responses API to obtain a structured JSON evaluation."""
         model = os.environ.get("SECONDARY_LLM_MODEL", "grok-3-mini")
 
         system_prompt = (
-            "You are an expert technical interviewer and assessor. Evaluate the candidate's ANSWER to the given QUESTION.\n"
-            "Assess along these dimensions: technical correctness, clarity, depth, ownership, bluff probability, and follow-up focus.\n"
-            "If the answer is vague but uses impressive-sounding buzzwords, penalize the score and mark 'buzzword-heavy' in red_flags.\n"
-            "Return a single JSON object and nothing else with fields: score (0-10 integer), reasoning (short), strengths (array of concise strings), gaps (array), follow_up (one follow-up question to probe the biggest gap), red_flags (array).\n"
-            "Be deterministic: use temperature 0. If uncertain, prefer lower scores.\n"
+            "You are a strict software engineering technical interviewer. Evaluate the candidate's ANSWER to the given QUESTION.\n"
+            "Evaluate ONLY the following subjective criteria on a scale of 0 to 10:\n"
+            "- technical_accuracy (0-10)\n"
+            "- depth (0-10)\n"
+            "- communication (0-10)\n"
+            "- reasoning_score (0-10)\n\n"
+            "Be EXTREMELY strict. Do NOT be encouraging or motivational. Do not assume correctness. Vague or generic answers must receive very low scores.\n"
+            "Return a single JSON object and nothing else with fields:\n"
+            "technical_accuracy (number), depth (number), communication (number), reasoning_score (number), "
+            "explanation (short string describing the technical evaluation details), "
+            "strengths (array of concise strings), gaps (array of concise strings), "
+            "follow_up (one follow-up question to probe the biggest gap), red_flags (array of concise strings).\n"
         )
 
         payload = {
@@ -171,18 +233,15 @@ class EvaluationService:
                     if not txt or not isinstance(txt, str):
                         continue
                     s = txt.strip()
-                    # strip code fences
                     if s.startswith("```") and s.endswith("```"):
                         parts = s.split("\n", 1)
                         if len(parts) > 1:
                             s = parts[1].rsplit("\n", 1)[0]
                     try:
                         obj = json.loads(s)
-                        # basic validation
-                        if "score" in obj:
+                        if "technical_accuracy" in obj:
                             return obj
                     except Exception:
-                        # not JSON -- continue
                         continue
             except Exception:
                 continue
@@ -196,62 +255,96 @@ class EvaluationService:
         expected_signals: Iterable[str] | None = None,
         difficulty: int = 5,
         trap_mode: bool = False,
+        session_history: list[dict] | None = None,
     ) -> AnswerEvaluation:
-        # Original deterministic heuristic implementation preserved for fallback.
         answer_clean = self._normalize(answer)
         question_clean = self._normalize(question)
         expected = [self._normalize(item) for item in (expected_signals or []) if item]
 
-        if not answer_clean:
-            return AnswerEvaluation(
-                score=0,
-                reasoning="The answer was empty, so no signal could be evaluated.",
-                gaps=["No substantive answer provided"],
-                follow_up=self._follow_up_for_gap(question, expected),
-                red_flags=["Empty response"],
-            )
+        relevance = self._compute_relevance_score(question, answer, list(expected_signals or []))
+        length = self._compute_length_score(answer)
+        keyword_match = self._compute_keyword_match_score(question, answer, list(expected_signals or []))
 
-        token_count = len(answer_clean.split())
-        sentence_count = max(1, len(re.findall(r"[.!?]+", answer)))
         specificity = self._specificity_score(answer_clean)
-        relevance = self._relevance_score(answer_clean, expected, question_clean)
-        structure = self._structure_score(answer, token_count, sentence_count)
+        structure = self._structure_score(answer, len(answer_clean.split()), max(1, len(re.findall(r"[.!?]+", answer))))
         seniority = self._seniority_score(answer_clean)
         faang_density = self._faang_density(answer_clean)
 
-        raw_score = (specificity * 2.1) + (relevance * 3.5) + (structure * 1.6) + (seniority * 1.1) + (faang_density * 1.7)
+        tech_acc = min(10.0, specificity * 2.5 + (2.0 if relevance > 5 else 0.0))
+        depth = min(10.0, specificity * 2.0 + faang_density * 2.0 + seniority * 2.0)
+        communication = min(10.0, structure * 5.0)
+        reasoning_score = min(10.0, seniority * 4.0 + (3.0 if "tradeoff" in answer_clean or "why" in question_clean else 1.0))
 
-        if trap_mode:
-            raw_score *= 0.95 if self._contains_confident_but_empty_claim(answer_clean) else 1.0
+        if not answer_clean:
+            tech_acc = depth = communication = reasoning_score = 0.0
 
-        difficulty_multiplier = 0.92 + (difficulty * 0.018)
-        score = max(0, min(10, round((raw_score / 10) * difficulty_multiplier, 1)))
+        raw_score = (
+            relevance * 0.35 +
+            keyword_match * 0.20 +
+            length * 0.10 +
+            tech_acc * 0.15 +
+            depth * 0.10 +
+            reasoning_score * 0.05 +
+            communication * 0.05
+        )
+        score_100 = raw_score * 10
+
+        is_generic = False
+        if "project" in question.lower() or "built" in question.lower() or "implemented" in question.lower():
+            if not self._check_project_context(question, answer, list(expected_signals or [])):
+                is_generic = True
+        if self._is_definitional_answer(answer):
+            is_generic = True
+
+        if not answer_clean:
+            score_100 = 0.0
+        elif relevance == 0:
+            score_100 = min(score_100, 20.0)
+        elif is_generic:
+            score_100 = min(score_100, 40.0)
+
+        penalty, repeated_detected = self._compute_repetition_penalty_and_flag(answer, session_history)
+        score_100 -= penalty
+        score_100 = max(0.0, min(100.0, score_100))
+
+        final_score = int(round(score_100 / 10.0))
 
         strengths = self._strengths(answer_clean, expected, specificity, relevance, structure, faang_density)
         gaps = self._gaps(answer_clean, expected, specificity, relevance, structure)
-        reasoning = self._build_reasoning(score, strengths, gaps)
+        reasoning_text = self._build_reasoning(final_score, strengths, gaps)
         follow_up = self._follow_up_for_gap(question, expected, strengths=strengths, gaps=gaps)
         red_flags = self._red_flags(answer_clean, trap_mode)
 
         return AnswerEvaluation(
-            score=int(math.floor(score)),
-            reasoning=reasoning,
+            score=final_score,
+            reasoning=reasoning_text,
             strengths=strengths[:4],
             gaps=gaps[:4],
             follow_up=follow_up,
             red_flags=red_flags[:3],
+            relevance=relevance,
+            keyword_match=keyword_match,
+            answer_length=length,
+            technical_accuracy=tech_acc,
+            depth=depth,
+            reasoning_score=reasoning_score,
+            communication=communication,
+            repeated_answer_detected=repeated_detected
         )
 
     def generate_feedback(self, evaluation: AnswerEvaluation, question: str) -> str:
         opening = f"You handled the prompt: {question[:95].rstrip()}"
         score_line = f"Score: {evaluation.score}/10."
 
-        if evaluation.score >= 8:
-            tone = "Strong response. You gave a focused answer with enough signal to indicate real ownership."
-        elif evaluation.score >= 5:
-            tone = "Decent direction, but the answer needs more specificity, tradeoffs, or evidence of impact."
+        score_val = evaluation.score * 10
+        if score_val >= 85:
+            tone = "Strong technical understanding. Specific examples. Good architecture awareness."
+        elif score_val >= 60:
+            tone = "Understands fundamentals. Needs more depth and technical detail."
+        elif score_val >= 40:
+            tone = "Limited explanation. Missing implementation details."
         else:
-            tone = "The response was too shallow for a serious interviewer. Tighten the structure and anchor it in concrete examples."
+            tone = "Answer does not adequately address the question. Lacks technical accuracy or relevance."
 
         next_steps = []
         if evaluation.gaps:
@@ -260,8 +353,111 @@ class EvaluationService:
             next_steps.append(f"Follow-up practice: {evaluation.follow_up}")
         if evaluation.red_flags:
             next_steps.append(f"Watch out for: {evaluation.red_flags[0].lower()}")
+        if evaluation.repeated_answer_detected:
+            next_steps.append("WARNING: Repeated Answer Pattern Detected - Multiple answers were highly similar and did not adequately address individual questions.")
 
         return "\n".join([opening, score_line, tone, *next_steps])
+
+    def _compute_relevance_score(self, question: str, answer: str, expected_signals: list[str]) -> float:
+        stop_words = {
+            "what", "is", "how", "did", "you", "use", "the", "a", "an", "and", "in", "on", "of", "to", "for", 
+            "with", "about", "your", "my", "project", "explain", "describe", "detail", "tell", "me", "some",
+            "any", "that", "this", "these", "those", "it", "they", "we", "us", "them", "he", "she", "i", "was"
+        }
+        q_words = {w for w in re.findall(r"\b\w{3,}\b", question.lower()) if w not in stop_words}
+        s_words = set()
+        for sig in expected_signals:
+            for w in re.findall(r"\b\w{3,}\b", sig.lower()):
+                s_words.add(w)
+
+        key_words = q_words.union(s_words)
+        ans_words = {w for w in re.findall(r"\b\w{3,}\b", answer.lower())}
+
+        if not ans_words:
+            return 0.0
+
+        matches = key_words.intersection(ans_words)
+        if not matches:
+            return 0.0
+
+        overlap_ratio = len(matches) / max(1, len(key_words))
+        score = 2.0 + min(8.0, overlap_ratio * 15.0)
+        return round(score, 2)
+
+    def _compute_length_score(self, answer: str) -> float:
+        words = len(answer.strip().split())
+        if words < 10:
+            return 1.0
+        elif words < 25:
+            return 4.0
+        elif words < 60:
+            return 6.0
+        elif words < 120:
+            return 8.0
+        else:
+            return 10.0
+
+    def _compute_repetition_penalty_and_flag(self, answer: str, session_history: list[dict] | None) -> tuple[int, bool]:
+        if not session_history or not answer:
+            return 0, False
+
+        from difflib import SequenceMatcher
+        ans_clean = re.sub(r"\s+", " ", answer.strip().lower())
+        repeat_count = 0
+        is_repeat = False
+
+        for h in session_history:
+            prev_ans = str(h.get("answer", "")).strip().lower()
+            if not prev_ans:
+                continue
+            prev_ans_clean = re.sub(r"\s+", " ", prev_ans)
+            
+            similarity = SequenceMatcher(None, ans_clean, prev_ans_clean).ratio()
+            if similarity > 0.8:
+                is_repeat = True
+                repeat_count += 1
+
+        if is_repeat:
+            penalty = repeat_count * 10
+            return penalty, True
+
+        return 0, False
+
+    def _compute_keyword_match_score(self, question: str, answer: str, expected_signals: list[str]) -> float:
+        expected_keywords = set()
+        stop_words = {"what", "is", "how", "did", "you", "use", "the", "a", "an", "and", "in", "on", "of", "to", "for", "with", "about", "your", "my", "project", "explain"}
+
+        for sig in expected_signals:
+            for w in re.findall(r"\b\w{3,}\b", sig.lower()):
+                expected_keywords.add(w)
+
+        for w in re.findall(r"\b\w{3,}\b", question.lower()):
+            if w not in stop_words:
+                expected_keywords.add(w)
+
+        if not expected_keywords:
+            return 10.0
+
+        ans_lower = answer.lower()
+        matched = [kw for kw in expected_keywords if kw in ans_lower]
+        score = (len(matched) / len(expected_keywords)) * 10.0
+        return round(score, 2)
+
+    def _check_project_context(self, question: str, answer: str, expected_signals: list[str]) -> bool:
+        ans_lower = answer.lower()
+        architecture_terms = {"architecture", "design", "structure", "system", "components", "pattern", "database", "server", "microservice", "api", "flow"}
+        implementation_terms = {"implemented", "built", "developed", "configured", "used", "wrote", "integrated", "created", "deployed"}
+
+        has_architecture = any(t in ans_lower for t in architecture_terms)
+        has_implementation = any(t in ans_lower for t in implementation_terms)
+        return has_architecture and has_implementation
+
+    def _is_definitional_answer(self, answer: str) -> bool:
+        ans_clean = answer.strip().lower()
+        pattern = r"^[a-z0-9+#_.\-]+\s+is\s+(?:a|an|the|used|defined|referred|stands)\b"
+        if re.match(pattern, ans_clean) and len(ans_clean.split()) < 20:
+            return True
+        return False
 
     def _normalize(self, text: str) -> str:
         return re.sub(r"\s+", " ", text.lower()).strip()
@@ -363,7 +559,6 @@ class EvaluationService:
             red_flags.append("Very short answer for a senior-level prompt")
         if """I don't know""" in answer.lower():
             red_flags.append("Needs a better recovery strategy for uncertainty")
-        # detect buzzword-heavy answers
         buzzwords = ["AI", "blockchain", "machine learning", "microservices", "cloud-native", "serverless"]
         lower = answer.lower()
         buzz_count = sum(1 for b in buzzwords if b.lower() in lower)

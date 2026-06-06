@@ -1,0 +1,32 @@
+<!-- User Profile inside Sidebar -->
+<div class="sidebar-user-profile" id="sidebarProfileTrigger" style="position: relative; cursor: pointer;"
+  data-bs-toggle="modal" data-bs-target="#profileSettingsModal">
+  {% set initials = (current_user.full_name.split()[0][:1] + current_user.full_name.split()[-1][:1]).upper() if
+  current_user.full_name and current_user.full_name.split()|length > 1 else (current_user.full_name[:2].upper() if
+  current_user.full_name else 'U') %}
+  {% if current_user.profile_image %}
+  <img src="{{ url_for('static', filename='profiles/' + current_user.profile_image) }}" class="user-avatar"
+    alt="Profile" id="sidebarAvatarImg" style="object-fit: cover;">
+  <div class="user-avatar" id="sidebarAvatarDiv" style="display: none;">{{ initials }}</div>
+  {% else %}
+  <img src="" class="user-avatar" alt="Profile" id="sidebarAvatarImg" style="display: none; object-fit: cover;">
+  <div class="user-avatar" id="sidebarAvatarDiv">{{ initials }}</div>
+  {% endif %}
+  <div class="user-info">
+    <strong>{{ current_user.full_name if current_user.full_name else 'Candidate' }}</strong>
+    <span>{{ current_user.email if current_user.is_authenticated else 'candidate@example.com' }}</span>
+  </div>
+  <i class="bi bi-chevron-down"></i>
+
+  <!-- Profile Dropdown Menu -->
+  <div class="profile-dropdown" id="profileDropdown" style="display: none;">
+    <ul class="profile-dropdown-list">
+      <li><a href="#" class="profile-dropdown-item"><i class="bi bi-person"></i> View Profile</a></li>
+      <li><button type="button" class="profile-dropdown-item" id="changePictureBtn"><i class="bi bi-camera"></i> Change Picture</button></li>
+      <li><button type="button" class="profile-dropdown-item text-danger" id="removePictureBtn"><i class="bi bi-trash"></i> Remove Picture</button></li>
+      <li class="dropdown-divider"></li>
+      <li><a href="{{ url_for('logout') }}" class="profile-dropdown-item text-danger"><i class="bi bi-box-arrow-right"></i> Logout</a></li>
+    </ul>
+  </div>
+</div>
+<input type="file" id="profileImageInput" accept=".jpg,.jpeg,.png,.webp" style="display: none;">

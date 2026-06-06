@@ -1,13 +1,36 @@
 document.addEventListener("DOMContentLoaded", () => {
   const bootstrapState = window.__INTERVIEW_BOOTSTRAP__ || {};
+  
+  // Build initial state for navigable Option B
+  const initialHistory = bootstrapState.interviewState?.history || [];
+  const currentQ = bootstrapState.initialQuestion || bootstrapState.interviewState?.current_question || null;
+  
+  const questions = initialHistory.map(h => ({
+    question: { prompt: h.question, kind: h.kind },
+    draftAnswer: h.answer,
+    score: h.score,
+    evaluated: true,
+    modified: false
+  }));
+  
+  if (currentQ) {
+    questions.push({
+      question: currentQ,
+      draftAnswer: "",
+      score: null,
+      evaluated: false,
+      modified: false
+    });
+  }
+  
   const state = {
     resumeProfile: bootstrapState.interviewState?.resume_profile || {},
     jobDescription: bootstrapState.interviewState?.job_description || {},
-    history: bootstrapState.interviewState?.history || [],
+    history: initialHistory,
+    questions: questions,
+    activeIndex: questions.length > 0 ? questions.length - 1 : 0,
     difficulty: bootstrapState.interviewState?.difficulty || 5,
-    currentQuestion: bootstrapState.initialQuestion || bootstrapState.interviewState?.current_question || null,
     voiceMode: true,
-    round: bootstrapState.interviewState?.history?.length || 0,
     sessionStartedAt: null,
     timerHandle: null,
   };
@@ -23,7 +46,11 @@ document.addEventListener("DOMContentLoaded", () => {
     questionScore: document.getElementById("questionScore"),
     startQuestionBtn: document.getElementById("startQuestionBtn"),
     speakQuestionBtn: document.getElementById("speakQuestionBtn"),
+    prevQuestionBtn: document.getElementById("prevQuestionBtn"),
+    nextQuestionBtn: document.getElementById("nextQuestionBtn"),
+    finishInterviewBtn: document.getElementById("finishInterviewBtn"),
     generateFollowUpBtn: document.getElementById("generateFollowUpBtn"),
+    modifiedBadge: document.getElementById("modifiedBadge"),
     micButton: document.getElementById("micButton"),
     waveform: document.getElementById("waveform"),
     audioStatus: document.getElementById("audioStatus"),
@@ -31,6 +58,7 @@ document.addEventListener("DOMContentLoaded", () => {
     answerInput: document.getElementById("answerInput"),
     transcribeBtn: document.getElementById("transcribeBtn"),
     submitAnswerBtn: document.getElementById("submitAnswerBtn"),
+    submitAnswerBtnText: document.getElementById("submitAnswerBtnText"),
     clearAnswerBtn: document.getElementById("clearAnswerBtn"),
     resetSessionBtn: document.getElementById("resetSessionBtn"),
     transcriptList: document.getElementById("transcriptList"),
@@ -55,19 +83,12 @@ document.addEventListener("DOMContentLoaded", () => {
     statusElement: elements.audioStatus,
     subStatusElement: elements.audioSubStatus,
     onTranscript: async (transcript) => {
-      // Populate the answer input with the transcript and allow the user to edit.
       elements.answerInput.value = transcript;
-      elements.audioSubStatus.textContent = "Transcript ready. Edit the transcript if needed, then press Submit to confirm.";
-      // Mark the submit button so we can tag the submission as "Voice" when the user confirms.
+      elements.audioSubStatus.textContent = "Transcript ready. Edit if needed.";
       elements.submitAnswerBtn.dataset.pendingVoice = "1";
       elements.submitAnswerBtn.disabled = false;
-      // Focus the input to encourage review/editing.
-      try {
-        elements.answerInput.focus();
-        elements.answerInput.setSelectionRange(elements.answerInput.value.length, elements.answerInput.value.length);
-      } catch (e) {
-        // ignore focus errors on some browsers
-      }
+      if (elements.submitAnswerBtnText) elements.submitAnswerBtnText.disabled = false;
+      saveCurrentDraft();
     },
     onStateChange: ({ recording, speaking }) => {
       elements.voiceMetric.textContent = recording ? "Recording" : speaking ? "Speaking" : "Off";
@@ -76,6 +97,26 @@ document.addEventListener("DOMContentLoaded", () => {
       renderSystemMessage(error.message || "Audio processing failed.", "error");
     },
   });
+
+  function saveCurrentDraft() {
+    if (state.questions.length > 0) {
+      const q = state.questions[state.activeIndex];
+      const val = elements.answerInput.value;
+      if (q.evaluated && q.draftAnswer !== val) {
+        q.modified = true;
+      }
+      q.draftAnswer = val;
+      updateBadgeVisibility();
+    }
+  }
+
+  function updateBadgeVisibility() {
+    if (state.questions.length > 0 && state.questions[state.activeIndex].modified && elements.modifiedBadge) {
+      elements.modifiedBadge.style.display = 'inline-block';
+    } else if (elements.modifiedBadge) {
+      elements.modifiedBadge.style.display = 'none';
+    }
+  }
 
   function formatTime(totalSeconds) {
     const minutes = String(Math.floor(totalSeconds / 60)).padStart(2, "0");
@@ -88,19 +129,16 @@ document.addEventListener("DOMContentLoaded", () => {
       elements.timerDisplay.textContent = "00:00";
       return;
     }
-
     const elapsed = Math.floor((Date.now() - state.sessionStartedAt) / 1000);
     elements.timerDisplay.textContent = formatTime(elapsed);
   }
 
   function startTimer() {
-    if (state.timerHandle) {
-      return;
+    if (!state.timerHandle) {
+      state.sessionStartedAt = state.sessionStartedAt || Date.now();
+      updateTimer();
+      state.timerHandle = window.setInterval(updateTimer, 1000);
     }
-
-    state.sessionStartedAt = state.sessionStartedAt || Date.now();
-    updateTimer();
-    state.timerHandle = window.setInterval(updateTimer, 1000);
   }
 
   function stopTimer() {
@@ -110,39 +148,40 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  function renderQuestion(question, animate = true) {
-    if (!question) {
-      return;
-    }
+  function renderQuestion(qObj, animate = true) {
+    if (!qObj || !qObj.question) return;
 
     const apply = () => {
+      const question = qObj.question;
       elements.questionKind.textContent = question.kind || "adaptive";
       elements.questionText.textContent = question.prompt || "No question available.";
       elements.questionDifficulty.textContent = `D${question.difficulty || state.difficulty}`;
       elements.questionScore.textContent = question.trap ? "Trap" : "Live";
       elements.questionHint.textContent = question.trap
-        ? "This one is designed to test your assumptions and expose shallow reasoning."
+        ? "This one is designed to test your assumptions."
         : "Answer like you are in a senior interview: precise, concise, and rooted in tradeoffs.";
       elements.difficultyBadge.textContent = `${question.difficulty || state.difficulty} / 10`;
       elements.sessionMetric.textContent = question.trap ? "Trap mode" : "Live";
-      elements.nextQuestionPreview.querySelector("strong").textContent = question.follow_up_seed
-        ? `The next follow-up will likely focus on ${question.follow_up_seed}.`
-        : "The next question will adapt after your answer.";
+      
       elements.questionCard.classList.remove("transition-out");
       elements.questionCard.classList.add("transition-in");
       window.setTimeout(() => elements.questionCard.classList.remove("transition-in"), 320);
-      state.currentQuestion = question;
-      state.difficulty = question.difficulty || state.difficulty;
-      startTimer();
-      speakQuestion(question.prompt);
+      
+      elements.answerInput.value = qObj.draftAnswer || "";
+      
+      updateBadgeVisibility();
       updateProgress();
+      updateNavigationButtons();
+      
+      if (!qObj.evaluated) {
+        startTimer();
+      }
     };
 
     if (!animate) {
       apply();
       return;
     }
-
     elements.questionCard.classList.add("transition-out");
     window.setTimeout(apply, 180);
   }
@@ -150,22 +189,16 @@ document.addEventListener("DOMContentLoaded", () => {
   function renderTranscriptItem(role, title, text, meta = {}) {
     const item = document.createElement("article");
     item.className = `transcript-item ${role}`;
-
     const strong = document.createElement("strong");
     strong.textContent = title;
-
     const paragraph = document.createElement("p");
     paragraph.textContent = text;
-
     const metaRow = document.createElement("div");
     metaRow.className = "transcript-meta";
-
     const left = document.createElement("span");
     left.textContent = meta.label || new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-
     const right = document.createElement("span");
     right.textContent = meta.tag || "";
-
     metaRow.append(left, right);
     item.append(strong, paragraph, metaRow);
     elements.transcriptList.prepend(item);
@@ -174,35 +207,47 @@ document.addEventListener("DOMContentLoaded", () => {
   function renderSystemMessage(text, kind = "info") {
     const item = document.createElement("article");
     item.className = `transcript-item ${kind}`;
-
     const strong = document.createElement("strong");
     strong.textContent = kind === "error" ? "System error" : "System note";
-
     const paragraph = document.createElement("p");
     paragraph.textContent = text;
-
     item.append(strong, paragraph);
     elements.transcriptList.prepend(item);
   }
 
   function updateProgress() {
-    const questionCount = Math.max(1, state.history.length + (state.currentQuestion ? 1 : 0));
-    const percent = Math.min(100, Math.round((state.history.length / 8) * 100));
+    const totalMax = 15;
+    const activeDisplay = state.questions.length > 0 ? state.activeIndex + 1 : 0;
+    const percent = Math.min(100, Math.round((activeDisplay / totalMax) * 100));
     elements.progressFill.style.width = `${percent}%`;
-    elements.progressLabel.textContent = `${state.history.length} / 8 rounds`;
-    elements.roundMetric.textContent = String(state.history.length);
-    elements.scoreMetric.textContent = state.history.length ? String(state.history[state.history.length - 1].score ?? "-") : "-";
+    elements.progressLabel.textContent = `Question ${activeDisplay} of ${totalMax}`;
+    elements.roundMetric.textContent = String(activeDisplay);
     elements.difficultyBadge.textContent = `${state.difficulty} / 10`;
-    if (state.history.length === 0 && state.currentQuestion) {
-      elements.scoreMetric.textContent = "-";
+  }
+
+  function updateNavigationButtons() {
+    // Previous Button
+    if (state.activeIndex <= 0) {
+      elements.prevQuestionBtn.disabled = true;
+    } else {
+      elements.prevQuestionBtn.disabled = false;
     }
+
+    // Finish / Next logic
+    if (state.questions.length >= 15 && state.activeIndex === 14) {
+      elements.nextQuestionBtn.style.display = 'none';
+      elements.finishInterviewBtn.style.display = 'inline-block';
+    } else {
+      elements.nextQuestionBtn.style.display = 'inline-block';
+      elements.finishInterviewBtn.style.display = 'none';
+    }
+
+    // If it's an already evaluated question, Next Question is just a local jump. 
+    // If it's the latest question and NOT evaluated, Next Question submits it.
   }
 
   async function speakQuestion(text) {
-    if (!state.voiceMode) {
-      return;
-    }
-
+    if (!state.voiceMode) return;
     try {
       audioHandler.setStatus("Speaking", "The AI interviewer is reading the prompt aloud.");
       await audioHandler.speak(text);
@@ -215,71 +260,87 @@ document.addEventListener("DOMContentLoaded", () => {
   async function generateQuestion() {
     elements.sessionMetric.textContent = "Generating";
     elements.startQuestionBtn.disabled = true;
-    elements.generateFollowUpBtn.disabled = true;
+    if (elements.nextQuestionBtn) elements.nextQuestionBtn.disabled = true;
 
     try {
+      // Rebuild history from state.questions strictly for generating the next adaptative step
+      const tempHistory = state.questions.filter(q => q.evaluated).map(q => ({
+        question: q.question.prompt,
+        answer: q.draftAnswer,
+        score: q.score,
+        kind: q.question.kind
+      }));
+
       const response = await fetch(endpoints.generateQuestion, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           resume_profile: state.resumeProfile,
           job_description: state.jobDescription,
-          session_history: state.history,
+          session_history: tempHistory,
           difficulty: state.difficulty,
         }),
       });
 
       const payload = await response.json();
-      if (!response.ok || !payload.ok) {
-        throw new Error(payload.error || "Unable to generate the next question.");
-      }
+      if (!response.ok || !payload.ok) throw new Error(payload.error || "Unable to generate the next question.");
 
-      state.currentQuestion = payload.question;
+      const newQ = {
+        question: payload.question,
+        draftAnswer: "",
+        score: null,
+        evaluated: false,
+        modified: false
+      };
+      state.questions.push(newQ);
+      state.activeIndex = state.questions.length - 1;
       state.difficulty = payload.difficulty || state.difficulty;
       elements.sessionMetric.textContent = "Live";
-      renderQuestion(payload.question);
+      
+      renderQuestion(state.questions[state.activeIndex]);
       renderSystemMessage("New interviewer prompt loaded.");
+      speakQuestion(payload.question.prompt);
     } catch (error) {
       renderSystemMessage(error.message, "error");
       elements.sessionMetric.textContent = "Error";
     } finally {
       elements.startQuestionBtn.disabled = false;
-      elements.generateFollowUpBtn.disabled = false;
+      if (elements.nextQuestionBtn) elements.nextQuestionBtn.disabled = false;
       updateProgress();
+      updateNavigationButtons();
     }
   }
 
-  async function submitAnswer(answerText, options = {}) {
-    const answer = answerText.trim();
+  async function submitAnswer(options = {}) {
+    saveCurrentDraft();
+    const qObj = state.questions[state.activeIndex];
+    const answer = qObj.draftAnswer.trim();
+    
     if (!answer) {
       renderSystemMessage("Write or speak an answer before submitting.", "error");
       return;
     }
 
-    if (!state.currentQuestion) {
-      await generateQuestion();
-      return;
-    }
-
-    // If not explicitly provided, infer whether this submission originated from a voice transcript
-    if (typeof options.fromVoice === "undefined") {
-      options.fromVoice = elements.submitAnswerBtn.dataset.pendingVoice === "1";
-    }
-
     elements.sessionMetric.textContent = "Scoring";
-    renderTranscriptItem("user", "You", answer, { tag: options.fromVoice ? "Voice" : "Typed" });
     elements.submitAnswerBtn.disabled = true;
     elements.transcribeBtn.disabled = true;
-    elements.startQuestionBtn.disabled = true;
+    if (elements.nextQuestionBtn) elements.nextQuestionBtn.disabled = true;
 
     try {
+      const tempHistory = state.questions.filter(q => q.evaluated).map(q => ({
+        question: q.question.prompt,
+        answer: q.draftAnswer,
+        score: q.score,
+        kind: q.question.kind
+      }));
+
       const response = await fetch(endpoints.processAnswer, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           answer,
-          current_question: state.currentQuestion,
-          session_history: state.history,
+          current_question: qObj.question,
+          session_history: tempHistory,
           resume_profile: state.resumeProfile,
           job_description: state.jobDescription,
           difficulty: state.difficulty,
@@ -287,78 +348,79 @@ document.addEventListener("DOMContentLoaded", () => {
       });
 
       const payload = await response.json();
-      if (!response.ok || !payload.ok) {
-        throw new Error(payload.error || "Unable to process the answer.");
-      }
+      if (!response.ok || !payload.ok) throw new Error(payload.error || "Unable to process the answer.");
 
       const evaluation = payload.evaluation;
-      state.history.push({
-        question: state.currentQuestion.prompt,
-        answer,
-        score: evaluation.score,
-        kind: state.currentQuestion.kind,
-      });
+      qObj.score = evaluation.score;
+      qObj.evaluated = true;
       state.difficulty = payload.difficulty || state.difficulty;
+      
+      // We don't push to state.history anymore, we just mark current as evaluated.
+      // The backend returns a next_question, we push it to state.questions!
+      if (state.questions.length < 15) {
+        const nextQ = {
+          question: payload.next_question,
+          draftAnswer: "",
+          score: null,
+          evaluated: false,
+          modified: false
+        };
+        state.questions.push(nextQ);
+        state.activeIndex = state.questions.length - 1;
+        renderQuestion(state.questions[state.activeIndex]);
+        speakQuestion(payload.next_question.prompt);
+      } else {
+        renderSystemMessage("Interview completed. Please finish the interview to download your report.", "info");
+        updateNavigationButtons();
+      }
 
-      renderTranscriptItem(
-        "ai",
-        `Score ${evaluation.score}/10`,
-        payload.feedback || evaluation.reasoning || "Feedback generated.",
-        { tag: evaluation.gaps?.[0] || "Adaptive feedback" }
-      );
-
-      elements.coachNotes.innerHTML = "";
-      (evaluation.strengths || ["Keep tightening the answer structure."]).slice(0, 3).forEach((item) => {
-        const li = document.createElement("li");
-        li.textContent = item;
-        elements.coachNotes.appendChild(li);
-      });
-
-      state.currentQuestion = payload.next_question;
-      renderQuestion(payload.next_question);
-      elements.questionScore.textContent = `Scored ${evaluation.score}/10`;
-      elements.scoreMetric.textContent = String(evaluation.score);
-      elements.sessionMetric.textContent = "Live";
-      updateProgress();
-      await speakQuestion(payload.next_question.prompt);
     } catch (error) {
       renderSystemMessage(error.message || "Submission failed.", "error");
       elements.sessionMetric.textContent = "Error";
     } finally {
       elements.submitAnswerBtn.disabled = false;
       elements.transcribeBtn.disabled = false;
-      elements.startQuestionBtn.disabled = false;
-      elements.answerInput.value = "";
-      // clear pending voice marker after submission
+      if (elements.nextQuestionBtn) elements.nextQuestionBtn.disabled = false;
       delete elements.submitAnswerBtn.dataset.pendingVoice;
     }
   }
 
+  function goPrevious() {
+    saveCurrentDraft();
+    if (state.activeIndex > 0) {
+      state.activeIndex--;
+      renderQuestion(state.questions[state.activeIndex]);
+    }
+  }
+
+  function goNext() {
+    saveCurrentDraft();
+    const qObj = state.questions[state.activeIndex];
+    
+    // Case 1: Viewing an old evaluated question, jump to next without API call
+    if (qObj.evaluated && state.activeIndex < state.questions.length - 1) {
+      state.activeIndex++;
+      renderQuestion(state.questions[state.activeIndex]);
+    } 
+    // Case 2: Latest question, submit and generate
+    else if (!qObj.evaluated) {
+      submitAnswer();
+    }
+    // Case 3: Editing latest question but it's evaluated? Just jump if available.
+  }
+
   function resetSession() {
     state.history = [];
-    state.currentQuestion = null;
+    state.questions = [];
+    state.activeIndex = 0;
     state.sessionStartedAt = null;
     stopTimer();
     elements.transcriptList.innerHTML = "";
     elements.answerInput.value = "";
-    elements.questionKind.textContent = "Waiting";
-    elements.questionText.textContent = "Start the interview to receive a challenging first question.";
-    elements.questionHint.textContent = "Your interviewer will focus on tradeoffs, outcomes, and the reasoning behind your choices.";
-    elements.questionDifficulty.textContent = `D${state.difficulty}`;
-    elements.questionScore.textContent = "Ready";
-    elements.nextQuestionPreview.querySelector("strong").textContent = "Generate a question to reveal the next challenge.";
     elements.progressFill.style.width = "0%";
-    elements.progressLabel.textContent = "0 / 8 rounds";
-    elements.roundMetric.textContent = "0";
-    elements.scoreMetric.textContent = "-";
-    elements.sessionMetric.textContent = "Idle";
+    elements.progressLabel.textContent = "Question 0 of 15";
     elements.audioStatus.textContent = "Idle";
     elements.audioSubStatus.textContent = "Press the mic to record a spoken answer.";
-    elements.coachNotes.innerHTML = `
-      <li>Lead with the decision.</li>
-      <li>Explain the tradeoff.</li>
-      <li>Close with the measurable outcome.</li>
-    `;
   }
 
   async function handleVoiceCapture() {
@@ -369,40 +431,74 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  // Bindings
   elements.startQuestionBtn.addEventListener("click", generateQuestion);
-  elements.generateFollowUpBtn.addEventListener("click", generateQuestion);
-  elements.submitAnswerBtn.addEventListener("click", () => submitAnswer(elements.answerInput.value));
+  if (elements.prevQuestionBtn) elements.prevQuestionBtn.addEventListener("click", goPrevious);
+  if (elements.nextQuestionBtn) elements.nextQuestionBtn.addEventListener("click", goNext);
+  
+  if (elements.finishInterviewBtn) {
+    elements.finishInterviewBtn.addEventListener("click", async () => {
+      saveCurrentDraft();
+      elements.finishInterviewBtn.disabled = true;
+      elements.finishInterviewBtn.innerHTML = 'Finishing <i class="bi bi-hourglass-split"></i>';
+      
+      const tempHistory = state.questions.filter(q => q.evaluated).map(q => ({
+        question: q.question.prompt,
+        answer: q.draftAnswer,
+        score: q.score,
+        kind: q.question.kind
+      }));
+
+      try {
+        await fetch('/api/interview/sync', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ session_history: tempHistory })
+        });
+      } catch (e) {
+        console.error("Sync failed:", e);
+      }
+      
+      window.location.href = '/reports/latest';
+    });
+  }
+
+  // Answer saving on typing
+  if (elements.answerInput) {
+    elements.answerInput.addEventListener("input", () => {
+      const hasText = !!elements.answerInput.value.trim();
+      if (elements.submitAnswerBtnText) elements.submitAnswerBtnText.disabled = !hasText;
+      saveCurrentDraft();
+    });
+  }
+
+  if (elements.submitAnswerBtn) elements.submitAnswerBtn.addEventListener("click", () => goNext());
+  if (elements.submitAnswerBtnText) elements.submitAnswerBtnText.addEventListener("click", () => goNext());
+
   elements.clearAnswerBtn.addEventListener("click", () => {
     elements.answerInput.value = "";
+    saveCurrentDraft();
+    if (elements.submitAnswerBtnText) elements.submitAnswerBtnText.disabled = true;
     audioHandler.setStatus("Idle", "Answer cleared.");
   });
+  
   elements.micButton.addEventListener("click", handleVoiceCapture);
   elements.transcribeBtn.addEventListener("click", handleVoiceCapture);
   elements.speakQuestionBtn.addEventListener("click", () => {
-    if (state.currentQuestion) {
-      speakQuestion(state.currentQuestion.prompt);
+    if (state.questions[state.activeIndex]) {
+      speakQuestion(state.questions[state.activeIndex].question.prompt);
     }
   });
-  elements.voiceModeToggle.addEventListener("click", () => {
-    state.voiceMode = !state.voiceMode;
-    elements.voiceModeToggle.textContent = state.voiceMode ? "Voice mode on" : "Voice mode off";
-    elements.voiceModeToggle.setAttribute("aria-pressed", String(state.voiceMode));
-    elements.voiceMetric.textContent = state.voiceMode ? "On" : "Off";
-  });
+
   elements.resetSessionBtn.addEventListener("click", resetSession);
 
-  if (state.currentQuestion) {
-    renderQuestion(state.currentQuestion, false);
-    renderTranscriptItem("ai", "Interviewer", state.currentQuestion.prompt, { tag: "Ready" });
+  // Init
+  if (state.questions.length > 0) {
+    renderQuestion(state.questions[state.activeIndex], false);
   } else {
     updateProgress();
   }
 
-  if (state.currentQuestion) {
-    startTimer();
-  }
-
-  updateProgress();
   elements.audioStatus.textContent = "Idle";
   elements.audioSubStatus.textContent = "Press the mic to record a spoken answer.";
 });
